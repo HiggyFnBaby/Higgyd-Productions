@@ -83,6 +83,18 @@ or are all bespoke one-off builds.
 |---|---|---|---|---|---|
 | — | — | — | — | — | — |
 
+## Related project: Revenue OS
+
+`../revenue-os/` — a real Claude Code multi-agent project (business brief +
+4 subagents + runbook), built to answer "how do we actually monetize this"
+in a repeatable way. Purpose is **both**: (1) internal engine for picking and
+monetizing pilot apps from this portfolio, and (2) a future sellable
+SaaS/CRM product for other entrepreneur-creators. See
+`../revenue-os/business-brief.md` for the thesis ("money is not a tool, the
+money is in systems") and `../revenue-os/runbooks/revenue-agent-runbook.md`
+for how to actually run it. Still open: whether Revenue OS itself becomes
+pilot #1.
+
 ## Session log
 
 - **2026-07-05** — Initial setup. Clarified the ask: Derrick wants a reusable
@@ -99,3 +111,13 @@ or are all bespoke one-off builds.
   on 1–3 apps first, prove it, then roll out wider — not all 80+ at once.
   Waiting on Derrick to shortlist candidate pilot apps (name, one-liner, login
   status, usage) before picking pilots or building anything.
+- **2026-07-06** — Pilot-selection work put on hold; Derrick started a new,
+  bigger initiative: `revenue-os/`, a multi-agent Revenue Operating System
+  (market-signal-researcher → offer-architect → content-angle-strategist →
+  conversation-system-builder, plus a runbook). Built as a real Claude Code
+  project (business brief + 4 real subagent definitions + runbook), not a
+  single chat answer. Purpose is both internal (run Derrick's own portfolio)
+  and productized (sell to other entrepreneur-creators later) — internal use
+  proves it before it's sold. This is the mechanism for the pilot-app
+  monetization work above, not a separate track. Next: come back to the
+  pilot-app shortlist, and decide whether Revenue OS itself is pilot #1.
