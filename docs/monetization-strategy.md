@@ -121,3 +121,18 @@ pilot #1.
   proves it before it's sold. This is the mechanism for the pilot-app
   monetization work above, not a separate track. Next: come back to the
   pilot-app shortlist, and decide whether Revenue OS itself is pilot #1.
+- **2026-07-09** — Turned Revenue OS from planning docs into a real running
+  app: `revenue-os/app/`, a multi-tenant Next.js + Prisma CRM. Pipeline
+  stages mirror the four-agent chain exactly; leads are prospective
+  customers (not portfolio apps); built as full multi-tenant SaaS from day
+  one (auth + billing included, not deferred). Billing built
+  provider-agnostic with Stripe as the concrete v1 implementation — Derrick's
+  answer on payment processor was "both," read as "architect for either,
+  ship one first." AI-agent automation calls the Claude API in-app using the
+  real `.claude/agents/*.md` files as system prompts. Verified: `npm install`,
+  `prisma generate`, `tsc --noEmit`, and `next build` all pass clean. See
+  `revenue-os/business-brief.md` for the fuller v1 summary and
+  `revenue-os/app/README.md` for how to actually run it (needs a Postgres DB,
+  an Anthropic API key, and a Stripe account — none wired to real credentials
+  yet). Next: get real credentials in, run it end-to-end, then return to the
+  pilot-app shortlist.

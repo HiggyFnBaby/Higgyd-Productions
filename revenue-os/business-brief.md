@@ -89,9 +89,37 @@ The full operating sequence is in `runbooks/revenue-agent-runbook.md`.
 
 ## Open decisions carried over (not yet resolved)
 
-- Payment processor (Stripe vs. Paddle/LemonSqueezy) — still open, see the
-  main monetization strategy doc.
 - Which 1–3 apps from the 80+ portfolio become the first pilots — still
   waiting on Derrick's shortlist.
 - Whether Revenue OS itself becomes pilot #1 (sell the system before/while
   using it internally) — worth deciding once the pilot shortlist comes in.
+- Whether to add Paddle/LemonSqueezy as a second billing provider — the
+  `app/` codebase is built provider-agnostic so this is additive, not a
+  rewrite, whenever it's decided.
+
+## The v1 application (`app/`)
+
+The idea above is now a real, working multi-tenant Next.js + Prisma app, not
+just planning docs — see `app/README.md` for how to run it. It builds and
+typechecks clean (verified 2026-07-09). Summary of what's real:
+
+- **Auth & multi-tenancy:** email/password signup creates a Workspace +
+  owner Membership; all data is scoped to `workspaceId`.
+- **Pipeline board:** leads move through SIGNAL → OFFER → ANGLE →
+  CONVERSATION → WON/LOST — the CRM pipeline literally *is* the Revenue OS
+  chain, not a generic CRM with agents bolted on.
+- **Classic automation:** every stage change auto-creates a next-action Task
+  (`src/lib/automations.ts`) — a lead never just goes quiet.
+- **AI-agent automation:** the "Run agent" button on a lead calls the Claude
+  API using the *actual* `.claude/agents/*.md` files as system prompts
+  (`src/lib/agents.ts` reads them directly — the app and the planning docs
+  can't drift apart, they're the same files).
+- **Billing:** provider-agnostic interface (`src/lib/billing/types.ts`) with
+  a working Stripe adapter (checkout + webhook). Paddle/LemonSqueezy can be
+  added later as a second adapter without touching call sites.
+
+v1 shortcuts worth knowing about: no OAuth login yet (email+password only),
+no team invites (one user per workspace), stage change is a dropdown not
+drag-and-drop. None of these block using it — see `app/README.md` for the
+full list and for the 3 things needed to actually run it (a Postgres DB, an
+Anthropic API key, a Stripe account).
