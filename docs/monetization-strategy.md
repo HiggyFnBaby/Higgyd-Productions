@@ -69,19 +69,57 @@ stamp it across the rest of the portfolio. Do NOT attempt all 80+ at once.
 access with no login. This is a per-app gating factor: no login means adding
 one is a prerequisite step before billing can work.
 
-**Pilot selection:** Derrick asked for help choosing the 1–3 pilot apps.
-Criteria to use: (1) already has real usage/traction, (2) solves a clear
-painful problem for a small business, (3) has or can easily get login, (4)
-isn't the most complex build in the portfolio. Waiting on Derrick to share a
-shortlist of candidate apps (name + one-liner + login status + usage) so we
-can pick.
+**Pilot decided: RealEstateOS Enterprise.** Criteria used: (1) real
+usage/traction, (2) clear painful problem for a small business, (3) has or
+can easily get login, (4) isn't the most complex build. None of the
+shortlisted candidates have logins or current users yet, so (1) and (3) were
+a wash across all three — the deciding factor was buyer clarity + proven
+willingness-to-pay elsewhere: real estate agents/brokerages are a large,
+evergreen B2B market with an already-proven CRM-buying category (Follow Up
+Boss, kvCORE, etc.) and abundant public pain-point material (r/realtors,
+agent forums) to feed `market-signal-researcher`. Single pilot, not three in
+parallel — same "pick one, don't split focus" logic built into
+`offer-architect`. Login/usage status is **Derrick's stated best guess, not
+independently verified** (no accessible repo for any of these apps — see
+below); treat as an assumption to confirm later, not a blocker.
+
+Runner-up, shelved for a later pilot: **Primerica Assist Pro** — flagged
+risk: "Primerica" is a real trademarked company; selling a tool under that
+name to their agents needs a rename/independent positioning before it goes
+further. **Higgins Media Broadcast Engine** also shelved — buyer unclear
+(internal tool for Derrick's own media brand vs. a sellable third-party
+product needs clarifying first).
+
+**Where this code actually lives:** unknown/scattered. Checked
+`HiggyFnBaby`'s GitHub account (2026-07-23) — only two repos exist
+(`Higgyd-Productions`, `nextjs-boilerplate`), neither contains any of the 15
+apps below. Given the single-giant-`.jsx`-file pattern and that two are
+explicitly tagged base44 apps, these most likely live inside base44 projects,
+not git. No base44 connector is available in this session, so code-level
+verification (login status, actual functionality) isn't currently possible —
+would need base44 export/sync-to-GitHub, or Derrick checking manually.
 
 Still need to find out: whether the 80+ apps share a common structure/template
 or are all bespoke one-off builds.
 
 | App name | Platform | What it does | Buyer | Monetization status | Notes |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| RevenueOS (flagship, retired) | base44 (assumed) | Earlier ~7,700-line attempt at the same Revenue OS idea | — | Superseded | **Retired 2026-07-23** — `revenue-os/app/` in this repo is now canonical; this old build is not being maintained further. |
+| RealEstateOS Enterprise | Unknown/base44 (assumed) | Real estate CRM | Real estate agents/brokerages (B2B) | **Pilot #1 — active** | No login yet (unverified), no current users. Next: run `market-signal-researcher` against this niche. |
+| Primerica Assist Pro | base44/Babel CRM | CRM for Primerica agents | Primerica agents (B2B) | Runner-up, shelved | Trademark/naming risk flagged — needs rename before pursuing. |
+| Higgins Media Broadcast Engine | Unknown | Media broadcast tooling; has a real Supabase schema already | Unclear (internal vs. sellable) | Runner-up, shelved | Buyer needs clarifying before pilot-ready. |
+| Higgins Media AI-BOS | Unknown | Business OS for Higgins Media | Unclear | Not evaluated | — |
+| HigginsFounderOS | Unknown | BookForge + Heritage Nexus | Unclear, likely personal/B2C | Not evaluated | — |
+| IGS Content Studio | Unknown | Content creation tooling | Unclear | Not evaluated | — |
+| Legacy Bobblehead Studio | Unknown | Niche bobblehead figurine business tool | Unclear, likely niche B2C/B2B | Not evaluated | — |
+| VA Claims Playbook OS | Unknown | VA disability claims help | Veterans / possibly VSOs (B2B?) | Not evaluated | Strong pain point, buyer needs clarifying (B2C vs B2B). |
+| Obsidian Weaver | Unknown | Dynamic character engine for fiction writing | Likely B2C/creator | Not evaluated | — |
+| Constitutional Justice CRM | Unknown | Legal/justice advocacy CRM (OIDR/JAC-SIS) | Unclear | Not evaluated | — |
+| TitanOS / CanvasAI / GrantTitan | Unknown | Grant-writing related (GrantTitan) | Unclear | Not evaluated | No files listed — possibly early-stage/unbuilt. |
+| Liberty Housing Hub | base44 | Housing assistance hub | Unclear (nonprofit/consumer?) | Not evaluated | — |
+| DHFEcosystemOS Course | Unknown | Course/training product | Unclear | Not evaluated | May be a course, not an app. |
+| Higgs Secure Cloud Vault | Unknown | "10-phase platform vision" | Unclear | Not evaluated | Sounds early/conceptual. |
+| Morning Intelligence Briefing | Unknown | Daily briefing tool | Likely B2C/personal | Not evaluated | — |
 
 ## Related project: Revenue OS
 
@@ -148,3 +186,16 @@ pilot #1.
   `revenue-os/business-brief.md`'s "Paywall enforcement" section for detail.
   Still outstanding: real credentials have never been plugged in and run
   end-to-end, and the 80+ app pilot shortlist is still pending.
+- **2026-07-23 (cont.)** — Pilot shortlist resolved. Derrick provided a
+  15-app portfolio list from memory. Checked GitHub (only 2 repos exist,
+  neither has any of this code — these apps most likely live in base44, not
+  git). Narrowed to 3 candidates by buyer clarity, picked **RealEstateOS
+  Enterprise** as the single pilot (real estate agents/brokerages — large
+  evergreen B2B market, proven CRM-buying category, abundant public
+  pain-point material). Flagged Primerica Assist Pro's trademark risk and
+  Broadcast Engine's unclear buyer as reasons they're shelved, not
+  disqualified. Resolved the RevenueOS.jsx overlap: `revenue-os/app/` is now
+  the canonical version; the old ~7,700-line base44 build is retired.
+  Login/usage status for all candidates is Derrick's stated guess, not
+  independently verified (no code access). Next: run `market-signal-researcher`
+  against the real estate agent niche as round one of the Revenue OS chain.
