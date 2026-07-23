@@ -199,3 +199,18 @@ pilot #1.
   Login/usage status for all candidates is Derrick's stated guess, not
   independently verified (no code access). Next: run `market-signal-researcher`
   against the real estate agent niche as round one of the Revenue OS chain.
+- **2026-07-23 (cont. 2)** — Ran `market-signal-researcher` against the real
+  estate agent niche for the RealEstateOS Enterprise pilot. Output:
+  `revenue-os/signal-reports/real-estate-agents.md`. Top findings: (1) slow
+  lead response time costs solo agents real, quantified money (15hr average
+  response time, $427/missed lead) — strongest entry; (2) subscription
+  fatigue — agents already pay $500-1,000+/mo across a fragmented tool
+  stack; (3) kvCORE specifically has strong evidence of agents paying
+  ~$500-999/mo while actively unhappy (ROI, lead quality, contract
+  lock-in) — the single best "paying for a bad fix" signal found. Flagged
+  honestly: Capterra/G2/TrustRadius/ActiveRain blocked direct fetch (403),
+  so quotes are via WebSearch's indexed summaries, not primary-source
+  reading; no Reddit/r/realtors threads surfaced despite trying. Report
+  recommends offer-architect prioritize findings #1 and #3. Next: run
+  `offer-architect` against this signal report to draft the actual offer
+  (what's sold, to whom, at what price).
