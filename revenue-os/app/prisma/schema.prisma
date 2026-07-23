@@ -1,0 +1,150 @@
+// Revenue OS CRM data model.
+// Every Lead moves through the Revenue OS chain (see ../../business-brief.md):
+// SIGNAL -> OFFER -> ANGLE -> CONVERSATION -> WON / LOST.
+// This schema is multi-tenant: everything hangs off a Workspace, and a
+// Membership is what lets a User see a Workspace's data.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PipelineStage {
+  SIGNAL
+  OFFER
+  ANGLE
+  CONVERSATION
+  WON
+  LOST
+}
+
+enum AgentName {
+  MARKET_SIGNAL_RESEARCHER
+  OFFER_ARCHITECT
+  CONTENT_ANGLE_STRATEGIST
+  CONVERSATION_SYSTEM_BUILDER
+}
+
+enum SubscriptionStatus {
+  NONE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingProviderName {
+  STRIPE
+  PADDLE
+  LEMONSQUEEZY
+}
+
+model Workspace {
+  id           String        @id @default(cuid())
+  name         String
+  createdAt    DateTime      @default(now())
+  memberships  Membership[]
+  leads        Lead[]
+  subscription Subscription?
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+}
+
+// A Membership is what grants a User access to a Workspace's data.
+// Every user gets an "owner" membership on their own workspace at signup;
+// this model exists so a workspace can later have more than one member.
+model Membership {
+  id          String    @id @default(cuid())
+  role        String    @default("owner") // "owner" | "member"
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, workspaceId])
+}
+
+model Lead {
+  id          String        @id @default(cuid())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  name        String
+  company     String?
+  contactInfo String?
+  notes       String?       @db.Text
+  stage       PipelineStage @default(SIGNAL)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  agentRuns   AgentRun[]
+  tasks       Task[]
+  stageEvents StageEvent[]
+
+  @@index([workspaceId, stage])
+}
+
+// One record per Claude API call to a Revenue OS agent for a given lead.
+// input/output are stored in full so a later agent in the chain (or a human)
+// can read exactly what a prior step produced.
+model AgentRun {
+  id        String    @id @default(cuid())
+  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId    String
+  agent     AgentName
+  input     String    @db.Text
+  output    String    @db.Text
+  model     String
+  createdAt DateTime  @default(now())
+
+  @@index([leadId, createdAt])
+}
+
+// Classic automation output: created automatically on a stage change so
+// there's always a concrete next action instead of a lead going quiet.
+model Task {
+  id        String   @id @default(cuid())
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId    String
+  title     String
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// Audit trail of every stage transition a lead has gone through.
+model StageEvent {
+  id        String         @id @default(cuid())
+  lead      Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId    String
+  fromStage PipelineStage?
+  toStage   PipelineStage
+  createdAt DateTime       @default(now())
+}
+
+// Provider-agnostic billing record. `provider` records which payment
+// processor this workspace is actually billed through; the app code talks to
+// a BillingProvider interface (see src/lib/billing/types.ts) so a second
+// provider can be added later without changing this model.
+model Subscription {
+  id                     String              @id @default(cuid())
+  workspace              Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId            String              @unique
+  provider               BillingProviderName
+  providerCustomerId     String?
+  providerSubscriptionId String?
+  status                 SubscriptionStatus  @default(NONE)
+  priceId                String?
+  currentPeriodEnd       DateTime?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+}
