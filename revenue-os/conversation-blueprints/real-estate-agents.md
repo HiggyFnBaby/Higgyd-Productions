@@ -1,4 +1,4 @@
-# Conversation Blueprint: Real Estate Agents (RealEstateOS Enterprise pilot)
+# Conversation Blueprint: Real Estate Agents (FirstReply — RealEstateOS Enterprise pilot)
 
 **Agent:** conversation-system-builder
 **Inputs:** `../offer-briefs/real-estate-agents.md`,
@@ -22,7 +22,7 @@ already know they have the pain and are in comparison mode.
 
 ### Opening move (no trust-building needed — they're already warm)
 
-> "Yeah — that's basically the whole gap. [Product] doesn't replace what
+> "Yeah — that's basically the whole gap. FirstReply doesn't replace what
 > you're already running, it just makes sure nothing sits unanswered. $129/mo,
 > no contract. Want the 30-second version of how it works?"
 

@@ -105,7 +105,7 @@ or are all bespoke one-off builds.
 | App name | Platform | What it does | Buyer | Monetization status | Notes |
 |---|---|---|---|---|---|
 | RevenueOS (flagship, retired) | base44 (assumed) | Earlier ~7,700-line attempt at the same Revenue OS idea | — | Superseded | **Retired 2026-07-23** — `revenue-os/app/` in this repo is now canonical; this old build is not being maintained further. |
-| RealEstateOS Enterprise | Unknown/base44 (assumed) | Real estate CRM | Real estate agents/brokerages (B2B) | **Pilot #1 — active** | No login yet (unverified), no current users. Next: run `market-signal-researcher` against this niche. |
+| RealEstateOS Enterprise → **sold as "FirstReply"** | Unknown/base44 (assumed) | Real estate CRM (original); pilot offer is narrower: instant lead auto-response | Solo real estate agents/small teams (B2B) | **Pilot #1 — active** | Renamed 2026-07-23 — "Enterprise" contradicted the narrow, no-bloat positioning. "RealEstateOS Enterprise" reserved for a possible later, bigger platform product. Full chain (signal→offer→angle→conversation) complete; ready to run against real prospects. |
 | Primerica Assist Pro | base44/Babel CRM | CRM for Primerica agents | Primerica agents (B2B) | Runner-up, shelved | Trademark/naming risk flagged — needs rename before pursuing. |
 | Higgins Media Broadcast Engine | Unknown | Media broadcast tooling; has a real Supabase schema already | Unclear (internal vs. sellable) | Runner-up, shelved | Buyer needs clarifying before pilot-ready. |
 | Higgins Media AI-BOS | Unknown | Business OS for Higgins Media | Unclear | Not evaluated | — |
@@ -265,3 +265,17 @@ pilot #1.
   is theoretical. Whatever happens (objections, close rate, unanticipated
   language) is new signal to feed back into `market-signal-researcher` per
   the runbook's loop.
+- **2026-07-23 (cont. 6)** — Resolved the naming/scope flag from the offer
+  brief. **Decision: the pilot is sold as "FirstReply,"** not "RealEstateOS
+  Enterprise" — the word "Enterprise" directly contradicted angle #6's
+  pitch ("you don't need another full CRM") and risked scaring off the
+  exact solo-agent buyer the evidence supports. "RealEstateOS Enterprise"
+  stays reserved, unused, for a possible later, separately-validated bigger
+  platform product (teams/brokerages) — not spent on a narrow tool it
+  doesn't fit. Checked for collisions first: "SpeedToLead" (collides with
+  iSpeedToLead, a real estate lead marketplace) and "LeadLock" (collides
+  with LeadLock AI, an very similar instant-response AI voice agent for
+  real estate) were both already taken; "FirstReply" and "AgentSpeed" came
+  back clear. Updated the offer brief, content angles, and conversation
+  blueprint to use "FirstReply" throughout. Next: run this against real
+  prospects.

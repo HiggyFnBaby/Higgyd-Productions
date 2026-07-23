@@ -1,4 +1,8 @@
-# Offer Brief: Real Estate Agents (RealEstateOS Enterprise pilot)
+# Offer Brief: Real Estate Agents (FirstReply — RealEstateOS Enterprise pilot)
+
+**Product name: FirstReply.** See "Naming decision" at the bottom — this
+offer is deliberately not marketed under "RealEstateOS Enterprise" (that
+name is reserved for a possible later, bigger platform product).
 
 **Agent:** offer-architect
 **Input:** `../signal-reports/real-estate-agents.md`
@@ -41,8 +45,8 @@ Solo real estate agents and very small teams (2–5 agents) who:
   platform like kvCORE ($500–$999/mo) without feeling the lead-response
   problem is actually solved.
 
-This is narrower than "RealEstateOS Enterprise" as a name implies — see the
-flag at the bottom of this brief.
+This is narrower than "RealEstateOS Enterprise" as a name implies — sold
+under the name **FirstReply** instead, see "Naming decision" at the bottom.
 
 ## The format
 
@@ -102,17 +106,19 @@ satisfaction promise.
 
 ---
 
-## Flag for Derrick: naming/scope mismatch
+## Naming decision (resolved 2026-07-23)
 
 "RealEstateOS Enterprise" as a name implies a broad, full-featured platform
 for larger operations. The evidence actually supports a **narrow wedge
-product for solo agents**, not an enterprise suite. Two honest options: (a)
-rename/reposition this specific offer for the pilot (something narrower,
-e.g. focused on "instant lead response"), keeping "RealEstateOS Enterprise"
-as a possible later, bigger product once this wedge is proven, or (b)
-keep the existing name and treat this as phase one of that larger vision.
-Either is fine — this is a decision for you, not something to resolve by
-picking a name myself.
+product for solo agents**, not an enterprise suite — and "Enterprise"
+specifically contradicts the "you don't need another full CRM" angle this
+offer leans on. **Decision: this pilot is sold as FirstReply.**
+"RealEstateOS Enterprise" stays unused and reserved for a possible later,
+separately-validated bigger platform product (teams/brokerages), not spent
+on a narrow tool it doesn't fit. Checked for name collisions before locking
+this in: "SpeedToLead" and "LeadLock" were both already taken by close
+real-estate-adjacent competitors; "FirstReply" and "AgentSpeed" came back
+clear — FirstReply was chosen.
 
 ## Handoff
 
