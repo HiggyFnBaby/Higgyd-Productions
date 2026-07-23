@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { trialEndDate } from "@/lib/access";
 
 // Creates a brand-new tenant: one User, one Workspace, one owner Membership.
 // This is the only place a Workspace gets created in v1 — there's no
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
       memberships: {
         create: {
           role: "owner",
-          workspace: { create: { name: workspaceName } },
+          workspace: { create: { name: workspaceName, trialEndsAt: trialEndDate() } },
         },
       },
     },

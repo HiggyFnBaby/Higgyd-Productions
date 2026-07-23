@@ -47,6 +47,11 @@ model Workspace {
   id           String        @id @default(cuid())
   name         String
   createdAt    DateTime      @default(now())
+  // Set at signup to now + 14 days (see src/app/api/signup/route.ts). A
+  // workspace has access if it's within this window OR has an active/
+  // trialing Subscription — see src/lib/access.ts, the one place that logic
+  // lives.
+  trialEndsAt  DateTime
   memberships  Membership[]
   leads        Lead[]
   subscription Subscription?

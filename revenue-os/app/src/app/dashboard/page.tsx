@@ -1,6 +1,8 @@
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getWorkspaceAccess } from "@/lib/access";
 import { PipelineBoard } from "@/components/PipelineBoard";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +10,12 @@ export const dynamic = "force-dynamic";
 export default async function PipelinePage() {
   const session = await getServerSession(authOptions);
   const workspaceId = session!.user.workspaceId;
+
+  // /dashboard/billing is the one page allowed to render regardless of
+  // access — everything else redirects there once the trial's up and
+  // there's no active subscription.
+  const access = await getWorkspaceAccess(workspaceId);
+  if (!access.active) redirect("/dashboard/billing?expired=1");
 
   const leads = await prisma.lead.findMany({
     where: { workspaceId },

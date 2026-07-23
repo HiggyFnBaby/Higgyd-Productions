@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getWorkspaceAccess } from "@/lib/access";
 import { STAGE_LABEL } from "@/lib/stages";
 import { AgentRunPanel } from "@/components/AgentRunPanel";
 
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic";
 export default async function LeadDetailPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   const workspaceId = session!.user.workspaceId;
+
+  const access = await getWorkspaceAccess(workspaceId);
+  if (!access.active) redirect("/dashboard/billing?expired=1");
 
   const lead = await prisma.lead.findFirst({
     where: { id: params.id, workspaceId },

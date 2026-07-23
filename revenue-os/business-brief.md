@@ -123,3 +123,23 @@ no team invites (one user per workspace), stage change is a dropdown not
 drag-and-drop. None of these block using it — see `app/README.md` for the
 full list and for the 3 things needed to actually run it (a Postgres DB, an
 Anthropic API key, a Stripe account).
+
+### Paywall enforcement + marketing page (added 2026-07-23)
+
+The gap that made this "not sellable yet" — paying didn't actually unlock
+anything — is closed:
+
+- Every workspace gets a 14-day free trial (`trialEndsAt`, set at signup, no
+  credit card needed).
+- `src/lib/access.ts` is the single place "does this workspace get to use
+  the app" is decided (active subscription OR still within trial).
+- That check runs in **two** places, not just one: the dashboard pages
+  (redirect to `/dashboard/billing` if expired) AND the API routes that cost
+  money or create usage — creating leads, changing stage, and especially
+  running an agent (a real Anthropic API charge per call). Gating only the
+  UI would have left the API callable directly after a trial expired; both
+  are covered.
+- `/dashboard/billing` is the one page that never gates — it's where an
+  expired workspace lands to see why and upgrade.
+- The homepage is now an actual pitch: the four-agent chain explained,
+  pricing card, trial CTA — not just two login links.

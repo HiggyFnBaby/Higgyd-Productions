@@ -136,3 +136,15 @@ pilot #1.
   an Anthropic API key, and a Stripe account — none wired to real credentials
   yet). Next: get real credentials in, run it end-to-end, then return to the
   pilot-app shortlist.
+- **2026-07-23** — Derrick asked to "fix and monetize" his apps; clarified
+  down to: "Revenue OS AI" = this same `revenue-os/app/`, "fix" = not
+  broken, just not sellable yet (paying didn't unlock anything). Closed that
+  gap: added a 14-day free trial (no card required) and real paywall
+  enforcement — gated in both the dashboard pages AND the cost-incurring API
+  routes (lead create/stage-change/run-agent), not just the UI, since a
+  direct API call would otherwise have bypassed it. Also replaced the
+  bare-bones homepage with an actual marketing/pricing page. Verified
+  `tsc --noEmit` and `next build` both pass clean after the changes. See
+  `revenue-os/business-brief.md`'s "Paywall enforcement" section for detail.
+  Still outstanding: real credentials have never been plugged in and run
+  end-to-end, and the 80+ app pilot shortlist is still pending.
