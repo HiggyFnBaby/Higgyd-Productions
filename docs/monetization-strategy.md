@@ -123,15 +123,19 @@ or are all bespoke one-off builds.
 
 ## Related project: Revenue OS
 
-`../revenue-os/` — a real Claude Code multi-agent project (business brief +
-4 subagents + runbook), built to answer "how do we actually monetize this"
-in a repeatable way. Purpose is **both**: (1) internal engine for picking and
-monetizing pilot apps from this portfolio, and (2) a future sellable
-SaaS/CRM product for other entrepreneur-creators. See
-`../revenue-os/business-brief.md` for the thesis ("money is not a tool, the
-money is in systems") and `../revenue-os/runbooks/revenue-agent-runbook.md`
-for how to actually run it. Still open: whether Revenue OS itself becomes
-pilot #1.
+**Moved 2026-07-24 to its own repo:
+[HiggyFnBaby/Revenue-OS-AI](https://github.com/HiggyFnBaby/Revenue-OS-AI)**
+(private). It's no longer inside this repo — `revenue-os/MOVED.md` here is
+just a pointer. That repo has the business brief, the 4 subagents, the
+runbook, and the full signal-report → offer-brief → content-angles →
+conversation-blueprint chain for the FirstReply pilot, plus the working
+Next.js + Prisma CRM app. Purpose is **both**: (1) internal engine for
+picking and monetizing pilot apps from this portfolio, and (2) a future
+sellable SaaS/CRM product for other entrepreneur-creators. This file (the
+cross-portfolio memory) stays here, deliberately not duplicated into the
+new repo — the new repo's docs reference this file by pointing back to
+`HiggyFnBaby/Higgyd-Productions`. Still open: whether Revenue OS itself
+becomes pilot #1.
 
 ## Session log
 
@@ -279,3 +283,20 @@ pilot #1.
   back clear. Updated the offer brief, content angles, and conversation
   blueprint to use "FirstReply" throughout. Next: run this against real
   prospects.
+- **2026-07-24** — Discovered Derrick had created a dedicated GitHub repo,
+  `HiggyFnBaby/Revenue-OS-AI`, intending it as the real going-forward home
+  for this work (separate from this repo's `revenue-os/` folder). Migrated
+  everything: business brief, 4 agent definitions, runbook, and the full
+  signal-report/offer-brief/content-angles/conversation-blueprint chain,
+  plus the app/ codebase. Fixed cross-repo references that pointed to this
+  file (which stays here, covering the whole 80+ app portfolio, not just
+  this one product). Verified npm install/prisma generate/tsc/next build
+  all pass clean in the new location, and confirmed the agent-markdown path
+  resolution still resolves correctly at the new relative depth. Removed
+  `revenue-os/` from this repo, replaced with `revenue-os/MOVED.md`
+  pointing to the new repo. Also flagged and resolved: Revenue-OS-AI was
+  public (same strategy-doc-exposure risk as this repo) — made private
+  before pushing. **Revenue OS work now lives entirely in
+  `HiggyFnBaby/Revenue-OS-AI`, not here.** This repo keeps the
+  cross-portfolio strategy doc (this file) as the one shared memory across
+  all of Derrick's apps, Revenue OS included.
