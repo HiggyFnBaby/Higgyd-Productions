@@ -175,3 +175,27 @@ pilot #1.
   still open), then return to picking the 1–3 pilot apps from the 80+
   portfolio now that the monetization template (auth + hosting + database +
   AI automation) is proven live end-to-end, not just in theory.
+- **2026-07-29 (cont.)** — Started wiring up Stripe (test mode): created one
+  recurring Price and added `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` to
+  Vercel. `STRIPE_WEBHOOK_SECRET` still not set up — subscription status
+  won't update after a real checkout until that's added. Note: the app only
+  supports a single price/tier right now, not multiple plans; adding real
+  tiers would need new app code (a plan picker + multiple Stripe Prices),
+  not just Stripe config — flagging as a future decision, not started.
+  Separately, discovered a **second, disconnected repo**
+  (`HiggyFnBaby/Revenue-OS-AI`) from an earlier, abandoned session — same
+  four-agent scaffold as `revenue-os/`, but it had actually been *run*
+  against a real niche. Its research is real and evidenced (see
+  methodology caveats inside each file): a signal report, offer brief,
+  content angles, and conversation blueprint for **"RealEstateOS
+  Enterprise"** — a real-estate-agent CRM angle on slow lead response time
+  (the signal report itself already pointed back at this doc, so it always
+  belonged here). Copied all four files into `revenue-os/signal-reports/`,
+  `revenue-os/offer-briefs/`, `revenue-os/content-angles/`, and
+  `revenue-os/conversation-blueprints/` so this repo has one home for
+  Revenue OS work going forward — treat `Revenue-OS-AI` as superseded, not
+  a second active project. Next: finish the Stripe webhook, then decide
+  whether "RealEstateOS Enterprise" is worth pursuing as pilot #1 — the
+  groundwork (evidenced pain point + priced offer + angles + a close
+  script) is already sitting in `revenue-os/`, unlike every other portfolio
+  app which still has none of that.
