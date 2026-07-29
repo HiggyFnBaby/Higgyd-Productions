@@ -136,3 +136,42 @@ pilot #1.
   an Anthropic API key, and a Stripe account — none wired to real credentials
   yet). Next: get real credentials in, run it end-to-end, then return to the
   pilot-app shortlist.
+- **2026-07-29** — Revenue OS is now live in production, not just locally
+  verified. Wired up a real Supabase Postgres database and a real Anthropic
+  API key, then deployed `revenue-os/app` to Vercel at
+  `higgyd-productions.vercel.app`. Verified end-to-end on the live site:
+  signup creates a real workspace/user/membership, login works, the pipeline
+  board loads, and moving a lead between stages auto-creates the next-action
+  task exactly as designed. Billing/Stripe is still not wired up (env vars
+  left blank) — that's the one piece of the v1 app that remains unproven for
+  real; everything else (auth, multi-tenancy, the agent chain automation,
+  hosting) is now confirmed working outside a sandbox.
+  Notes for next time:
+  - **Use Supabase's connection *pooler* string, not the "direct connection"
+    one.** The direct connection host is IPv6-only and fails to connect from
+    a lot of environments (this sandbox included); the pooler host
+    (`aws-*.pooler.supabase.com`, port 5432 for a normal server app) works
+    everywhere. Also: any password with `@` or `%` in it must be
+    percent-encoded before it'll work inside the connection string URL.
+  - Vercel's "Root Directory" for this project must be set to
+    `revenue-os/app` (the app lives in a subfolder, not the repo root), and
+    the "Include source files outside of the Root Directory" toggle must be
+    turned on — the "Run agent" feature reads `.claude/agents/*.md` from
+    *outside* that folder, and silently can't find them without this.
+  - The Vercel **Build Command** needs to run `npx prisma db push` before
+    `next build`, so schema changes actually apply to the real database on
+    every deploy.
+  - Derrick already had an unrelated, older Vercel project also named
+    similarly (`revenue-os-ai`, connected to a separate `Revenue-OS-AI`
+    repo) from an earlier abandoned attempt — cost real time getting
+    confused between the two. The correct project for this repo is
+    `higgyd-productions` on Vercel, connected to
+    `HiggyFnBaby/Higgyd-Productions`.
+  - Both the Supabase database password and the Anthropic API key had to be
+    rotated mid-session after being pasted in chat — a reminder to generate
+    credentials directly into a password manager or the target dashboard
+    where possible, rather than typing/pasting them through a conversation.
+  Next: decide on and wire up a payment processor (open decision above is
+  still open), then return to picking the 1–3 pilot apps from the 80+
+  portfolio now that the monetization template (auth + hosting + database +
+  AI automation) is proven live end-to-end, not just in theory.
