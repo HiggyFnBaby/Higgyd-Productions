@@ -1,0 +1,51 @@
+// FirstReply data model.
+// One Agent = one paying customer (a solo real estate agent). Each Agent has
+// a unique public lead-capture link (/l/[agentId]) they share/embed; every
+// Lead that comes in through it gets an instant auto-reply, then scheduled
+// follow-ups until they respond or the agent marks the lead won/lost.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  WON
+  LOST
+}
+
+model Agent {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  leads        Lead[]
+}
+
+// instantReplyAt/touch2SentAt/touch3SentAt track the follow-up cadence
+// directly on the lead rather than a separate event log — v1 only needs to
+// know what's already been sent, not a full history.
+model Lead {
+  id             String     @id @default(cuid())
+  agent          Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId        String
+  name           String
+  email          String
+  phone          String?
+  message        String?    @db.Text
+  status         LeadStatus @default(NEW)
+  instantReplyAt DateTime?
+  touch2SentAt   DateTime?
+  touch3SentAt   DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([agentId, status])
+}
