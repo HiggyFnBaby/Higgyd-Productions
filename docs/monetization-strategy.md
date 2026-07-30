@@ -199,3 +199,14 @@ pilot #1.
   groundwork (evidenced pain point + priced offer + angles + a close
   script) is already sitting in `revenue-os/`, unlike every other portfolio
   app which still has none of that.
+- **2026-07-29 (cont. 2)** — Stripe billing finished and verified live:
+  webhook endpoint added (`customer.subscription.created/updated/deleted`),
+  `STRIPE_WEBHOOK_SECRET` set in Vercel, then tested end-to-end with a real
+  Stripe test-mode checkout — billing page correctly flipped from
+  `Status: NONE` to `Status: ACTIVE` after payment, confirming the full
+  chain (checkout to Stripe to webhook to database) works. `revenue-os/app`
+  is now a complete, working v1: auth, multi-tenancy, the pipeline board,
+  AI-agent automation, and billing all proven live, not just locally.
+  Derrick decided to move forward on FirstReply (the RealEstateOS
+  Enterprise offer) as the next thing to actually build, asked to be led
+  through it. Next: scope and build FirstReply as its own project.
