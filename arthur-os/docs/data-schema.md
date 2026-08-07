@@ -9,6 +9,7 @@ field-level detail.
 ```
 Owner 1───────────────────────────────* (none — single row in v1)
 Settings (singleton row: operatingMode)
+ApprovalPolicy (one row per (action, mode) — the autonomy engine's table)
 
 Lead ──< Offer ──1:1── Order ──1:1── Project ──< Artifact
                                           │
@@ -61,6 +62,13 @@ AuditEvent   (standalone, append-only log of every consequential action)
 - **Settings** — one singleton row holding `operatingMode`
   (`ADMIN | SEMI_AUTONOMOUS | AUTONOMOUS`), always visible on the dashboard
   per `CLAUDE.md`'s mobile-first interface requirement.
+- **ApprovalPolicy** — the approval-policy engine's `(action, mode) →
+  requiresApproval` table (see `owner-decisions-needed.md` #4 and
+  `approval-policy-matrix.md`). Seeded with defaults by `prisma/seed.ts`.
+  `src/lib/policy.ts`'s `requiresApproval()` checks a hardcoded
+  never-autonomous floor *before* reading any row here, so this table can
+  only ever grant autonomy for actions the floor allows — today, that's
+  only `APPROVE_STANDARD_OFFER`.
 
 ## Full-platform target schema (not yet built)
 
@@ -95,6 +103,10 @@ Mapping notes for whoever builds the next slice:
   into recurring billing and license management — see the pricing table in
   the business brief for which offers need this (monthly care plans,
   white-label licenses).
-- `approval_policies` formalizes the mode-conditional gating that v1
-  deliberately does *not* implement yet (see `approval-policy-matrix.md`'s
-  v1-vs-target split).
+- `approval_policies` — largely done: v1's `ApprovalPolicy` model already
+  implements this shape for the one action it gates today
+  (`APPROVE_STANDARD_OFFER`). Extending it to gate more actions (delivery,
+  refunds once built, etc.) means adding rows/wiring the engine into more
+  route handlers — the never-autonomous floor in `src/lib/policy.ts` would
+  need a deliberate, reviewed code change first for anything currently on
+  it (see `approval-policy-matrix.md`).

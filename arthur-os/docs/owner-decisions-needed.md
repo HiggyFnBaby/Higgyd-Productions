@@ -35,15 +35,33 @@ slice, or production), not before v1 ships.
    runs synchronously inside the Stripe webhook handler, so the webhook
    response is a few seconds slower on the Claude path — fine at v1's order
    volume, worth revisiting if that ever becomes a real bottleneck.
+4. **Mode-conditional approval-policy engine — RESOLVED 2026-08-07.** The
+   doc's own original recommendation was to wait until Derrick had watched
+   the manual version run a few real orders first — Derrick explicitly
+   chose to build and turn it on now instead, ahead of that. Implemented as
+   `ApprovalPolicy` (a `(action, mode) → requiresApproval` table, Prisma
+   model, seeded with defaults by `prisma/seed.ts`) plus a hardcoded
+   "never autonomous" floor in `src/lib/policy.ts` that no policy row can
+   override (custom-priced offers, delivery, refunds, public publishing,
+   mass outreach — matching governance rule 5 in `CLAUDE.md` plus the
+   target matrix's "never autonomous" rows). The only behavior change in
+   v1: creating a **standard-priced** offer (exactly the catalog default)
+   in Semi-Autonomous or Autonomous mode now skips the manual "Approve"
+   click and immediately creates the Stripe test-mode checkout session —
+   `POST /api/offers` checks the policy and calls the same
+   `approveOfferAndCreateCheckout()` the manual route uses. Any price
+   override, or Admin mode, still always requires the manual click. The
+   auto-approval is logged with a distinct actor
+   (`"Arthur (Sales Closer — auto-approved per policy)"`) so it's never
+   indistinguishable from a manual owner approval in the audit trail — and
+   the offer detail page now shows who/what approved every offer. This
+   does **not** change anything about buyer-facing communication: nothing
+   in v1 emails or otherwise sends the checkout link to the buyer
+   automatically either way — that's still an entirely manual, outside-the-app
+   step. See `approval-policy-matrix.md` for the full updated matrix.
 
 ## Open
 
-4. **When to build the mode-conditional approval-policy engine.** v1
-   deliberately keeps every payment/delivery/QA action manual in every
-   Operating Mode (see `approval-policy-matrix.md`). Building the real
-   engine (Semi-Autonomous auto-approving standard-priced offers, etc.) is
-   the next meaningful autonomy increase and should be scoped as its own
-   slice once Derrick has watched the manual version run a few real orders.
 5. **Second offer package / industry editions.** `CLAUDE.md` names
    contractor/real-estate/veterans/nonprofit/coaching/restaurant editions as
    later work "once the production framework is proven." v1 intentionally

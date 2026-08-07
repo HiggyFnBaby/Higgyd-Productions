@@ -53,6 +53,11 @@ export function CreateOfferForm({ leadId, defaultPriceCents }: { leadId: string;
       >
         {loading ? "Creating..." : "Create draft offer"}
       </button>
+      <p className="w-full text-xs text-slate-400">
+        Leaving the price at the catalog default may auto-approve immediately (checkout link generated with no
+        further click) in Semi-Autonomous/Autonomous mode — see the offer page after creating it. Any other price
+        always requires a manual approval, in every mode.
+      </p>
     </form>
   );
 }

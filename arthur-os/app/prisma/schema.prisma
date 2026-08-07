@@ -75,6 +75,21 @@ enum EmailStatus {
   FAILED
 }
 
+// The mode-conditional approval-policy engine's action vocabulary — see
+// ../../docs/approval-policy-matrix.md and
+// ../../docs/owner-decisions-needed.md #4. DELIVER_PROJECT, ISSUE_REFUND,
+// PUBLISH_PUBLIC_CONTENT, and APPROVE_CUSTOM_OFFER are on the hardcoded
+// "never autonomous" floor in src/lib/policy.ts — no ApprovalPolicy row can
+// make those autonomous, regardless of what's stored here.
+enum ApprovalAction {
+  APPROVE_STANDARD_OFFER
+  APPROVE_CUSTOM_OFFER
+  DELIVER_PROJECT
+  ISSUE_REFUND
+  PUBLISH_PUBLIC_CONTENT
+  SEND_MASS_OUTREACH
+}
+
 // The single operator account. v1 is intentionally single-tenant — see
 // ../../docs/data-schema.md's "full-platform target schema" for how this
 // generalizes to real multi-user access later.
@@ -91,6 +106,21 @@ model Settings {
   id            String        @id @default("singleton")
   operatingMode OperatingMode @default(ADMIN)
   updatedAt     DateTime      @updatedAt
+}
+
+// One row per (action, mode) pair — the "requires a manual owner click?"
+// table src/lib/policy.ts's requiresApproval() reads. Seeded with defaults
+// by prisma/seed.ts to match ../../docs/approval-policy-matrix.md's target
+// matrix. Editable later from the Command Center without a code change;
+// no UI for that exists yet in v1 (see owner-decisions-needed.md #4).
+model ApprovalPolicy {
+  id               String         @id @default(cuid())
+  action           ApprovalAction
+  mode             OperatingMode
+  requiresApproval Boolean        @default(true)
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([action, mode])
 }
 
 // One row per /audit submission. See ../.claude/agents/lead-hunter.md for

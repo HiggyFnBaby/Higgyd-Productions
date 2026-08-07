@@ -19,10 +19,12 @@ Free AI Business Audit (public /audit form)
   → buyer thank-you email + owner sale-notification email
 ```
 
-Every step writes to an append-only audit log, visible on `/admin`. Payment,
-delivery, and QA/red-team sign-off are always manual owner actions — see
-`../docs/approval-policy-matrix.md` for why the Operating Mode selector
-doesn't change that yet.
+Every step writes to an append-only audit log, visible on `/admin`. Delivery
+and QA/red-team sign-off are always manual owner actions in every mode.
+Offer approval is mode-conditional: standard (catalog-default) pricing
+auto-approves in Semi-Autonomous/Autonomous mode, custom pricing always
+requires a manual click — see `../docs/approval-policy-matrix.md` for the
+full matrix and `../docs/owner-decisions-needed.md` #4 for why.
 
 It's single-owner (no multi-tenant workspaces, no public signup) — see
 `../docs/architecture.md` for why that's deliberate for v1.
@@ -64,7 +66,10 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 Then:
 1. Visit `http://localhost:3000/audit` and submit the form as a "buyer."
 2. Log in at `/login` with your seeded Owner credentials.
-3. In `/admin/leads`, open the lead, create and approve an offer.
+3. In `/admin/leads`, open the lead and create an offer. In Admin mode
+   (the default), click "Approve" on the offer page; in Semi-Autonomous or
+   Autonomous mode, a standard-priced offer auto-approves the moment it's
+   created — no separate click.
 4. Open the printed Stripe Checkout URL, pay with a Stripe test card
    (`4242 4242 4242 4242`, any future expiry/CVC).
 5. The webhook creates a Project automatically — find it in `/admin/projects`.
@@ -90,15 +95,20 @@ template if it's unset or the call fails (see
   and a Resend account (see `../docs/environment-and-accounts.md`).
 - Exactly one sellable package (AI Business Growth-in-a-Box) — see "First
   launch offer" in `../CLAUDE.md`.
-- The Operating Mode selector is real and audit-logged but doesn't yet gate
-  anything differently — every payment/delivery/QA action stays manual in
-  every mode (see `../docs/approval-policy-matrix.md`).
+- The Operating Mode selector changes exactly one thing so far: standard-priced
+  offer approval. Delivery, QA/red-team sign-off, and custom pricing stay
+  manual in every mode, by hardcoded design — see
+  `../docs/approval-policy-matrix.md`.
 - No rate limiting on the public `/audit` form yet.
+- No admin UI yet for editing `ApprovalPolicy` rows — changing the default
+  policy means editing `prisma/seed.ts` and re-seeding.
 
 ## Where things live
 
 - `prisma/schema.prisma` — the data model (see `../docs/data-schema.md`).
 - `src/lib/qualification.ts` — lead-hunter's scoring logic.
+- `src/lib/policy.ts`, `src/lib/offerApproval.ts`, `src/app/api/offers/route.ts` —
+  the approval-policy engine and where it's wired in (offer creation/approval).
 - `src/lib/stripe.ts`, `src/app/api/stripe/webhook/route.ts` — payment
   creation + verified, idempotent confirmation.
 - `src/lib/production.ts`, `src/lib/anthropic.ts`, `src/lib/agents.ts` — the

@@ -25,6 +25,29 @@ not just by reading code.
 - [ ] The Checkout URL, opened in Stripe test mode with a Stripe test card,
       completes a real (test) payment.
 
+## Approval-policy engine (owner-decisions-needed.md #4)
+- [ ] With Operating Mode set to Admin, creating a standard-priced
+      (catalog-default) offer leaves it in `DRAFT` — the manual "Approve"
+      action is still required.
+- [ ] With Operating Mode set to Semi-Autonomous or Autonomous, creating a
+      standard-priced offer immediately returns status `CHECKOUT_CREATED`
+      with a real Stripe test-mode checkout URL populated, and writes an
+      `AuditEvent` with action `AUTO_APPROVE_OFFER_AND_CREATE_CHECKOUT` and
+      actor `"Arthur (Sales Closer — auto-approved per policy)"`.
+- [ ] With Operating Mode set to Semi-Autonomous or Autonomous, creating an
+      offer at any price other than the catalog default leaves it in
+      `DRAFT` regardless of mode — the never-autonomous floor for custom
+      pricing applies even in Autonomous mode.
+- [ ] The offer detail page shows "Approved by: Owner" for a manually
+      approved offer and "Approved by: Arthur (Sales Closer — auto-approved
+      per policy)" for an auto-approved one.
+- [ ] Deleting or editing `ApprovalPolicy` rows for `DELIVER_PROJECT`,
+      `ISSUE_REFUND`, `PUBLISH_PUBLIC_CONTENT`, `SEND_MASS_OUTREACH`, or
+      `APPROVE_CUSTOM_OFFER` to `requiresApproval: false` directly in the
+      database does **not** change behavior — `requiresApproval()` checks
+      the hardcoded `NEVER_AUTONOMOUS_ACTIONS` floor before ever reading a
+      policy row for these.
+
 ## Payment verification
 - [ ] `POST /api/stripe/webhook` rejects a request with an invalid/missing
       `stripe-signature` header (400, no state change).
