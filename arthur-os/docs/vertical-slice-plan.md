@@ -37,11 +37,13 @@ requires a manual owner click regardless of Operating Mode (see
 5. **Payment verification** — `POST /api/stripe/webhook`, idempotent on
    `stripeSessionId`, creates `Order` + `Project` only on a verified
    `checkout.session.completed` event.
-6. **Production stub** — `src/lib/production.ts` generates a first-draft
-   deliverable `Artifact` from the Lead's audit answers (deterministic
-   template; upgradeable later to call Claude via the same pattern
-   `revenue-os/app/src/lib/anthropic.ts` uses, reading
-   `.claude/agents/production-agent.md` as the system prompt).
+6. **Production** — `src/lib/production.ts` generates a first-draft
+   deliverable `Artifact` from the Lead's audit answers. Calls Claude
+   (`src/lib/anthropic.ts`, reading `.claude/agents/production-agent.md` as
+   the system prompt, the same pattern `revenue-os/app/src/lib/anthropic.ts`
+   uses) when `ANTHROPIC_API_KEY` is configured; otherwise, or if that call
+   fails, falls back to a deterministic template so a Claude hiccup never
+   blocks project creation after a verified payment.
 7. **QA + red-team gates** — `/admin/projects/[id]`,
    `POST /api/projects/:id/qa`, `POST /api/projects/:id/redteam`. Both must
    show a passing review before the deliver action is enabled.

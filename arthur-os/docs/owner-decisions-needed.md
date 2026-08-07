@@ -21,16 +21,23 @@ slice, or production), not before v1 ships.
    a dedicated Gmail API/OAuth app (not yet implemented — bigger lift on
    both sides) stays open; revisit when Derrick is ready to test the flow
    with a real buyer instead of the `EmailEvent` log.
+3. **Whether the production stub should call Claude — RESOLVED 2026-08-07.**
+   Derrick asked for the upgrade. `src/lib/production.ts` now calls Claude
+   via `src/lib/anthropic.ts`, using `.claude/agents/production-agent.md` as
+   the system prompt (the same pattern
+   `revenue-os/app/src/lib/anthropic.ts` proves out), whenever
+   `ANTHROPIC_API_KEY` is set — and falls back to the original deterministic
+   template automatically if the key is unset or the Claude call errors, so
+   a production-agent hiccup never blocks project creation after a verified
+   payment. Which path ran is recorded on the artifact name and in the
+   audit log (`draftSource: "claude" | "template"`) — never presented as
+   one when it was the other. One accepted trade-off worth knowing: this
+   runs synchronously inside the Stripe webhook handler, so the webhook
+   response is a few seconds slower on the Claude path — fine at v1's order
+   volume, worth revisiting if that ever becomes a real bottleneck.
 
 ## Open
 
-3. **Whether the production stub should call Claude.** v1's
-   `src/lib/production.ts` is a deterministic template so the slice runs
-   without an Anthropic API key. Upgrading it to call Claude (using
-   `.claude/agents/production-agent.md` as the system prompt, the same
-   pattern `revenue-os/app/src/lib/anthropic.ts` already proves out) is a
-   small, low-risk change — worth doing once Derrick wants to see real
-   AI-drafted output, but not required for the slice's acceptance criteria.
 4. **When to build the mode-conditional approval-policy engine.** v1
    deliberately keeps every payment/delivery/QA action manual in every
    Operating Mode (see `approval-policy-matrix.md`). Building the real

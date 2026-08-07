@@ -76,8 +76,12 @@ Then:
 
 **Real:** the whole flow above, using real (test-mode) Stripe, a real
 Postgres-backed audit trail, real signed/expiring delivery links (HMAC +
-server-side expiry check), a real deterministic production draft built from
-the lead's own submitted answers.
+server-side expiry check), and a real production draft built from the
+lead's own submitted answers — via a live Claude call (using
+`.claude/agents/production-agent.md` as the system prompt) when
+`ANTHROPIC_API_KEY` is set, falling back automatically to a deterministic
+template if it's unset or the call fails (see
+`../docs/owner-decisions-needed.md` #3).
 
 **v1 shortcuts, worth knowing about:**
 - Single Owner login only — no signup, no team members, no OAuth/Google
@@ -86,9 +90,6 @@ the lead's own submitted answers.
   and a Resend account (see `../docs/environment-and-accounts.md`).
 - Exactly one sellable package (AI Business Growth-in-a-Box) — see "First
   launch offer" in `../CLAUDE.md`.
-- The production "draft" is a deterministic template, not a live Claude
-  call — see `../docs/owner-decisions-needed.md` #3 for the documented,
-  optional upgrade path.
 - The Operating Mode selector is real and audit-logged but doesn't yet gate
   anything differently — every payment/delivery/QA action stays manual in
   every mode (see `../docs/approval-policy-matrix.md`).
@@ -100,7 +101,9 @@ the lead's own submitted answers.
 - `src/lib/qualification.ts` — lead-hunter's scoring logic.
 - `src/lib/stripe.ts`, `src/app/api/stripe/webhook/route.ts` — payment
   creation + verified, idempotent confirmation.
-- `src/lib/production.ts` — the production-agent stub.
+- `src/lib/production.ts`, `src/lib/anthropic.ts`, `src/lib/agents.ts` — the
+  production-agent draft: Claude when `ANTHROPIC_API_KEY` is set, a
+  deterministic template fallback otherwise.
 - `src/app/api/projects/[id]/{qa,redteam,deliver}/route.ts` — the
   independent review + delivery gates.
 - `src/lib/delivery.ts` — signed download token generation/verification.

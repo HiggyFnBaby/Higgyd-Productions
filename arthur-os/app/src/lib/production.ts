@@ -1,19 +1,20 @@
 import type { Lead } from "@prisma/client";
 import { OFFER_CATALOG } from "@/lib/offers";
 import { OfferPackage } from "@prisma/client";
+import { draftAuditReportWithClaude } from "@/lib/anthropic";
 
-// Implements the production-agent contract
-// (../.claude/agents/production-agent.md) as a deterministic template so
-// the vertical slice runs with no ANTHROPIC_API_KEY required — see
-// ../../docs/owner-decisions-needed.md #3 for the documented, optional
-// upgrade path to a real Claude call using that same agent file as the
-// system prompt (the same pattern as
-// ../../../revenue-os/app/src/lib/anthropic.ts).
-//
-// This never fabricates data the lead didn't provide — governance rule 4 in
-// ../../CLAUDE.md — it only reflects the lead's own submitted answers back
-// in a structured deliverable.
-export function draftAuditReport(lead: Lead): string {
+export interface ProductionDraft {
+  content: string;
+  source: "claude" | "template";
+}
+
+// Deterministic fallback implementation of the production-agent contract
+// (../../.claude/agents/production-agent.md) — never fabricates data the
+// lead didn't provide (governance rule 4 in ../../CLAUDE.md), it only
+// reflects the lead's own submitted answers back in a structured
+// deliverable. Used whenever ANTHROPIC_API_KEY isn't configured, or if the
+// Claude call fails — see generateProductionDraft below.
+export function draftAuditReportTemplate(lead: Lead): string {
   const answers = lead.rawAnswers as Record<string, unknown>;
   const catalogEntry = OFFER_CATALOG[OfferPackage.GROWTH_IN_A_BOX];
 
@@ -47,4 +48,28 @@ export function draftAuditReport(lead: Lead): string {
   ];
 
   return lines.join("\n");
+}
+
+// Entry point the Stripe webhook calls after a verified payment. Calls
+// Claude (using .claude/agents/production-agent.md as the system prompt)
+// when ANTHROPIC_API_KEY is configured — see
+// ../../docs/owner-decisions-needed.md #3 — and falls back to the
+// deterministic template otherwise, or if the Claude call errors, so a
+// production-agent hiccup never blocks project creation after a real
+// payment. The caller records which path ran (draft.source) in the
+// artifact name and the audit log — never presenting a template as if it
+// were AI-drafted output, or vice versa (governance rule 4).
+export async function generateProductionDraft(lead: Lead): Promise<ProductionDraft> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { content: draftAuditReportTemplate(lead), source: "template" };
+  }
+
+  try {
+    const content = await draftAuditReportWithClaude(lead);
+    return { content, source: "claude" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`Production Agent Claude call failed, falling back to template: ${message}`);
+    return { content: draftAuditReportTemplate(lead), source: "template" };
+  }
 }
