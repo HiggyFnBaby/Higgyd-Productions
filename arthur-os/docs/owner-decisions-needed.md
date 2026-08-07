@@ -69,11 +69,23 @@ slice, or production), not before v1 ships.
    veteran-owned, nonprofit, coaching, or restaurant — `CLAUDE.md`'s
    suggested list) from, rather than guessing at one now.
 
+## In progress
+
+6. **Public deployment / custom domain — IN PROGRESS 2026-08-07.** Derrick
+   chose the first, lowest-risk step: a private, preview-only Vercel
+   deployment of `arthur-os/app` (a new Vercel project scoped to it — the
+   repo's existing Vercel project only previews `revenue-os/app`), with
+   deployment protection enabled, no custom domain, no live Stripe keys, no
+   real email. **Blocked:** the Vercel MCP connector isn't authorized in
+   this session, so the project itself hasn't been created yet — see
+   `deployment-guide.md` for the exact steps to finish this once Vercel
+   access is authorized (via claude.ai connector settings, or manually in
+   the Vercel dashboard without waiting on that). The larger public-launch
+   decision (custom domain, production keys, real customer email) stays
+   exactly as out-of-scope as before — this only covers a private preview.
+
 ## Open
 
-6. **Public deployment / custom domain.** Out of scope until explicitly
-   authorized (`CLAUDE.md`'s BUILD METHOD: "Stop and request approval before
-   production deployment"). No action needed until Derrick asks for it.
 7. **Rate limiting / bot protection on the public `/audit` form.** Flagged
    in the threat model as an accepted gap for a pre-launch test-mode slice.
    Needs a decision (and likely a small build) before any public launch.
