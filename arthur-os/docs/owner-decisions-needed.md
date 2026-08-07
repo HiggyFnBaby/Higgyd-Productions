@@ -59,14 +59,18 @@ slice, or production), not before v1 ships.
    in v1 emails or otherwise sends the checkout link to the buyer
    automatically either way — that's still an entirely manual, outside-the-app
    step. See `approval-policy-matrix.md` for the full updated matrix.
+5. **Second offer package / industry editions — RESOLVED (confirmed wait)
+   2026-08-07.** Derrick confirmed the doc's own recommendation: keep v1
+   selling exactly one package (AI Business Growth-in-a-Box) until the
+   flagship has actually closed some real (or test) orders. No code
+   change — `OFFER_CATALOG`/`OfferPackage` stay single-entry. Unlike
+   decision #4, this one wasn't overridden; revisit once there's real order
+   evidence to design a second package (contractor, real estate,
+   veteran-owned, nonprofit, coaching, or restaurant — `CLAUDE.md`'s
+   suggested list) from, rather than guessing at one now.
 
 ## Open
 
-5. **Second offer package / industry editions.** `CLAUDE.md` names
-   contractor/real-estate/veterans/nonprofit/coaching/restaurant editions as
-   later work "once the production framework is proven." v1 intentionally
-   ships exactly one package. Confirm the flagship should run for some
-   number of real (or test) orders before a second package gets built.
 6. **Public deployment / custom domain.** Out of scope until explicitly
    authorized (`CLAUDE.md`'s BUILD METHOD: "Stop and request approval before
    production deployment"). No action needed until Derrick asks for it.
