@@ -1,0 +1,245 @@
+// Arthur Digital Works OS — v1 vertical-slice data model.
+// See ../../docs/data-schema.md for the full explanation of every model.
+// Single-tenant (one Owner) by design — see ../../docs/architecture.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OperatingMode {
+  ADMIN
+  SEMI_AUTONOMOUS
+  AUTONOMOUS
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  DISQUALIFIED
+  OFFER_APPROVED
+  WON
+  LOST
+}
+
+enum OfferPackage {
+  GROWTH_IN_A_BOX
+}
+
+enum OfferStatus {
+  DRAFT
+  PENDING_OWNER_APPROVAL
+  APPROVED
+  CHECKOUT_CREATED
+  PAID
+  DECLINED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum ProjectStatus {
+  RESEARCH
+  PRODUCTION
+  QA_PENDING
+  QA_FAILED
+  QA_PASSED
+  RED_TEAM_PENDING
+  RED_TEAM_FAILED
+  RED_TEAM_PASSED
+  READY_FOR_DELIVERY
+  DELIVERED
+}
+
+enum ReviewResult {
+  PASS
+  FAIL
+}
+
+enum EmailType {
+  BUYER_THANK_YOU
+  OWNER_SALE_NOTIFICATION
+}
+
+enum EmailStatus {
+  SENT_TEST
+  SENT
+  FAILED
+}
+
+// The single operator account. v1 is intentionally single-tenant — see
+// ../../docs/data-schema.md's "full-platform target schema" for how this
+// generalizes to real multi-user access later.
+model Owner {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// Singleton settings row. Always exactly one row in v1.
+model Settings {
+  id            String        @id @default("singleton")
+  operatingMode OperatingMode @default(ADMIN)
+  updatedAt     DateTime      @updatedAt
+}
+
+// One row per /audit submission. See ../.claude/agents/lead-hunter.md for
+// the qualification contract this model's status/score fields implement.
+model Lead {
+  id                 String     @id @default(cuid())
+  name               String
+  email              String
+  company            String?
+  businessType       String?
+  painPoint          String     @db.Text
+  monthlyRevenueRange String?
+  urgency            String?
+  source             String     @default("free_audit")
+  rawAnswers         Json
+  qualificationScore Int
+  status             LeadStatus @default(NEW)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  offers             Offer[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Offer {
+  id           String       @id @default(cuid())
+  lead         Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId       String
+  package      OfferPackage @default(GROWTH_IN_A_BOX)
+  priceCents   Int
+  currency     String       @default("usd")
+  status       OfferStatus  @default(DRAFT)
+  approvedAt   DateTime?
+  stripeCheckoutSessionId String? @unique
+  stripeCheckoutUrl       String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  order        Order?
+
+  @@index([leadId])
+}
+
+// Created only by the Stripe webhook handler after signature verification —
+// never by a client request. See ../../docs/threat-model.md #1, #10.
+model Order {
+  id                     String      @id @default(cuid())
+  offer                  Offer       @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offerId                String      @unique
+  leadId                 String
+  stripeSessionId        String      @unique
+  stripePaymentIntentId  String?
+  amountCents            Int
+  currency               String
+  status                 OrderStatus @default(PENDING)
+  paidAt                 DateTime?
+  createdAt              DateTime    @default(now())
+  project                Project?
+}
+
+model Project {
+  id             String          @id @default(cuid())
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String          @unique
+  leadId         String
+  name           String
+  status         ProjectStatus   @default(RESEARCH)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  artifacts      Artifact[]
+  qaReviews      QAReview[]
+  redTeamReviews RedTeamReview[]
+  delivery       Delivery?
+}
+
+model Artifact {
+  id        String   @id @default(cuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  name      String
+  content   String   @db.Text
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+// Independent from RedTeamReview by design — see
+// ../.claude/agents/qa-inspector.md and ../../docs/threat-model.md #8.
+model QAReview {
+  id        String       @id @default(cuid())
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  reviewer  String
+  result    ReviewResult
+  notes     String?      @db.Text
+  createdAt DateTime     @default(now())
+
+  @@index([projectId])
+}
+
+model RedTeamReview {
+  id        String       @id @default(cuid())
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  reviewer  String
+  result    ReviewResult
+  notes     String?      @db.Text
+  createdAt DateTime     @default(now())
+
+  @@index([projectId])
+}
+
+// downloadToken is HMAC-signed (src/lib/delivery.ts) AND checked against
+// this row's expiresAt at request time — see ../../docs/threat-model.md #5-6.
+model Delivery {
+  id            String    @id @default(cuid())
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId     String    @unique
+  downloadToken String    @unique
+  expiresAt     DateTime
+  deliveredAt   DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+model EmailEvent {
+  id        String      @id @default(cuid())
+  type      EmailType
+  to        String
+  subject   String
+  status    EmailStatus
+  body      String      @db.Text
+  error     String?
+  createdAt DateTime    @default(now())
+
+  @@index([type, createdAt])
+}
+
+// Append-only by construction — no update/delete API path exists.
+// See ../../docs/threat-model.md #9.
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actor      String
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
