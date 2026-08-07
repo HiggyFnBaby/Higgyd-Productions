@@ -4,11 +4,18 @@ Nothing in this list blocks the vertical slice from being built and run in
 test mode — these are decisions needed before going further (a second
 slice, or production), not before v1 ships.
 
-1. **Flagship offer price.** `CLAUDE.md`'s pricing table gives a
-   Business-in-a-Box range of $497–$2,500. v1 defaults the AI Business
-   Growth-in-a-Box offer to **$1,497** (`src/lib/offers.ts`) as a
-   mid-range placeholder the owner can override per-offer in the approval
-   UI. Confirm or change the default.
+## Resolved
+
+1. **Flagship offer price — RESOLVED 2026-08-07.** `CLAUDE.md`'s pricing
+   table gives a Business-in-a-Box range of $497–$2,500. Derrick confirmed
+   keeping the v1 default of **$1,497** (`src/lib/offers.ts`) — no code
+   change needed. This remains a per-offer override in the approval UI, not
+   a hard price; revisit once real (or test) orders show whether buyers are
+   qualifying as more price-sensitive or more premium than expected (see
+   decision 5 below, which depends on this one running for a while first).
+
+## Open
+
 2. **Email provider for real sends.** Test-mode logging is the default and
    requires no decision to keep using. Going live needs either (a) a
    Resend (or similar transactional-email) account and API key, or (b) a
