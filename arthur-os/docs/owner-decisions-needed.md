@@ -68,10 +68,23 @@ slice, or production), not before v1 ships.
    evidence to design a second package (contractor, real estate,
    veteran-owned, nonprofit, coaching, or restaurant — `CLAUDE.md`'s
    suggested list) from, rather than guessing at one now.
+6. **Rate limiting / bot protection on the public `/audit` form — RESOLVED
+   2026-08-07.** Implemented: a DB-backed, fixed-window IP rate limit
+   (`src/lib/rateLimit.ts`, default 5 submissions per 10 minutes — generous
+   enough that a real, hesitant buyer resubmitting never gets blocked),
+   plus a honeypot field (`website`, hidden from real users, visible to
+   simple bots) that silently no-ops instead of erroring so a bot gets no
+   signal it was caught. DB-backed rather than in-memory specifically
+   because a serverless deployment (multiple function instances, e.g. once
+   decision 7 below's Vercel deployment exists) would make an in-memory
+   counter unreliable. See `threat-model.md` threats #16–18 for what this
+   does and doesn't cover — notably, a distributed (multi-IP) flood isn't
+   addressed; that's deferred until there's evidence it's actually
+   happening, not built speculatively.
 
 ## In progress
 
-6. **Public deployment / custom domain — IN PROGRESS 2026-08-07.** Derrick
+7. **Public deployment / custom domain — IN PROGRESS 2026-08-07.** Derrick
    chose the first, lowest-risk step: a private, preview-only Vercel
    deployment of `arthur-os/app` (a new Vercel project scoped to it — the
    repo's existing Vercel project only previews `revenue-os/app`), with
@@ -86,9 +99,6 @@ slice, or production), not before v1 ships.
 
 ## Open
 
-7. **Rate limiting / bot protection on the public `/audit` form.** Flagged
-   in the threat model as an accepted gap for a pre-launch test-mode slice.
-   Needs a decision (and likely a small build) before any public launch.
 8. **Multi-tenant / team access.** v1 is single-Owner by design. If Arthur
    Digital Works OS is ever meant to have a second human operator (not
    buyers — an actual co-operator), that's a schema change (see

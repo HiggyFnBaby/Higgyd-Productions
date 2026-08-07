@@ -99,14 +99,18 @@ template if it's unset or the call fails (see
   offer approval. Delivery, QA/red-team sign-off, and custom pricing stay
   manual in every mode, by hardcoded design — see
   `../docs/approval-policy-matrix.md`.
-- No rate limiting on the public `/audit` form yet.
 - No admin UI yet for editing `ApprovalPolicy` rows — changing the default
   policy means editing `prisma/seed.ts` and re-seeding.
+- The `/audit` rate limit (`src/lib/rateLimit.ts`) is per-IP only — it
+  doesn't defend against a distributed flood from many IPs. See
+  `../docs/threat-model.md` threat #18.
 
 ## Where things live
 
 - `prisma/schema.prisma` — the data model (see `../docs/data-schema.md`).
 - `src/lib/qualification.ts` — lead-hunter's scoring logic.
+- `src/lib/rateLimit.ts`, `src/app/api/leads/route.ts` — the `/audit` form's
+  rate limit and honeypot bot protection.
 - `src/lib/policy.ts`, `src/lib/offerApproval.ts`, `src/app/api/offers/route.ts` —
   the approval-policy engine and where it's wired in (offer creation/approval).
 - `src/lib/stripe.ts`, `src/app/api/stripe/webhook/route.ts` — payment

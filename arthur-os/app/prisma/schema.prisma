@@ -123,6 +123,24 @@ model ApprovalPolicy {
   @@unique([action, mode])
 }
 
+// Fixed-window rate-limit counter for public endpoints (currently just
+// POST /api/leads — the /audit form). `key` is scoped per-endpoint and
+// per-IP (e.g. "audit:203.0.113.4"); `windowStart` is the window's start
+// timestamp, so a new row is created each window instead of updating one
+// row forever. See ../../docs/threat-model.md and
+// ../../docs/owner-decisions-needed.md #7. DB-backed (not in-memory) so it
+// works correctly across multiple serverless function instances — see
+// src/lib/rateLimit.ts. Rows are never deleted in v1 (acceptable at this
+// traffic volume); a cleanup job is future work if that changes.
+model RateLimitBucket {
+  id          String   @id @default(cuid())
+  key         String
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@unique([key, windowStart])
+}
+
 // One row per /audit submission. See ../.claude/agents/lead-hunter.md for
 // the qualification contract this model's status/score fields implement.
 model Lead {

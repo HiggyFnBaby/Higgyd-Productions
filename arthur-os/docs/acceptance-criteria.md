@@ -13,6 +13,14 @@ not just by reading code.
 - [ ] The lead's initial `status` follows the documented scoring thresholds
       in `src/lib/qualification.ts`, and an `AuditEvent` records the
       automatic classification with actor `"Lead Hunter (auto)"`.
+- [ ] Submitting the form with the hidden `website` honeypot field non-empty
+      returns the same 201 success response as a real submission, but
+      creates no `Lead` row.
+- [ ] Submitting more than `AUDIT_FORM_RATE_LIMIT.max` times (default 5)
+      from the same IP within the window (default 10 minutes) returns 429
+      on the next attempt and writes an `AuditEvent` with action
+      `RATE_LIMIT_BLOCKED`; a 6th submission from a *different* IP in the
+      same window still succeeds.
 
 ## Offer + approval
 - [ ] Only an authenticated Owner can view `/admin/leads/[id]` or create an
