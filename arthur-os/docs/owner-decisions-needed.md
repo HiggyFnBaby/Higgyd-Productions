@@ -13,15 +13,17 @@ slice, or production), not before v1 ships.
    a hard price; revisit once real (or test) orders show whether buyers are
    qualifying as more price-sensitive or more premium than expected (see
    decision 5 below, which depends on this one running for a while first).
+2. **Email provider for real sends — RESOLVED (deferred) 2026-08-07.**
+   Derrick chose to stay on test-mode logging for now rather than set up
+   Resend or a dedicated Gmail OAuth app — no account, no code change. The
+   choice between Resend (already implemented,
+   `src/lib/email/resendProvider.ts` — just needs an account + API key) and
+   a dedicated Gmail API/OAuth app (not yet implemented — bigger lift on
+   both sides) stays open; revisit when Derrick is ready to test the flow
+   with a real buyer instead of the `EmailEvent` log.
 
 ## Open
 
-2. **Email provider for real sends.** Test-mode logging is the default and
-   requires no decision to keep using. Going live needs either (a) a
-   Resend (or similar transactional-email) account and API key, or (b) a
-   dedicated Gmail API/OAuth app registered for Arthur specifically — not
-   the Gmail connection already used elsewhere (see `CLAUDE.md`'s EMAIL
-   RULES). Which one, and when to flip the switch, is Derrick's call.
 3. **Whether the production stub should call Claude.** v1's
    `src/lib/production.ts` is a deterministic template so the slice runs
    without an Anthropic API key. Upgrading it to call Claude (using
