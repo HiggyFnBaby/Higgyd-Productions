@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Todo</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --text: #211f1c;
+    --text-muted: #a29d92;
+    --border: #e6e3dc;
+    --accent: #21201d;
+    --accent-on: #f7f6f3;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171613;
+      --surface: #1e1c19;
+      --text: #ece9e2;
+      --text-muted: #6d6a62;
+      --border: #2c2a25;
+      --accent: #ece9e2;
+      --accent-on: #171613;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #171613;
+    --surface: #1e1c19;
+    --text: #ece9e2;
+    --text-muted: #6d6a62;
+    --border: #2c2a25;
+    --accent: #ece9e2;
+    --accent-on: #171613;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    display: flex;
+    justify-content: center;
+    padding: 12vh 20px 40px;
+  }
+
+  main {
+    width: 100%;
+    max-width: 440px;
+  }
+
+  h1 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 28px;
+  }
+
+  form {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 28px;
+  }
+
+  form input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 16px;
+    color: var(--text);
+    padding: 4px 0;
+    font-family: inherit;
+  }
+
+  form input::placeholder {
+    color: var(--text-muted);
+  }
+
+  form button {
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 12px;
+  }
+
+  form button:hover {
+    color: var(--text);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  li:last-child {
+    border-bottom: none;
+  }
+
+  .check {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .check svg {
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  li.done .check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  li.done .check svg {
+    opacity: 1;
+    color: var(--accent-on);
+  }
+
+  .label {
+    flex: 1;
+    font-size: 16px;
+    line-height: 1.4;
+    cursor: pointer;
+    word-break: break-word;
+  }
+
+  li.done .label {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .remove {
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    padding: 4px;
+  }
+
+  li:hover .remove {
+    opacity: 1;
+  }
+
+  .remove:hover {
+    color: var(--text);
+  }
+
+  .empty {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 8px 0;
+  }
+
+  .count {
+    margin-top: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  .check:focus-visible,
+  .remove:focus-visible,
+  form input:focus-visible,
+  form button:focus-visible {
+    outline: 2px solid var(--text-muted);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Todo</h1>
+
+  <form id="form">
+    <input id="input" type="text" placeholder="Add a task…" autocomplete="off" autofocus />
+    <button type="submit" aria-label="Add">+</button>
+  </form>
+
+  <ul id="list"></ul>
+  <p id="empty" class="empty" hidden>Nothing here yet.</p>
+  <p id="count" class="count"></p>
+</main>
+
+<script>
+  const STORAGE_KEY = "minimal-todo-items";
+
+  function load() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function save(items) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  let items = load();
+
+  const list = document.getElementById("list");
+  const form = document.getElementById("form");
+  const input = document.getElementById("input");
+  const empty = document.getElementById("empty");
+  const count = document.getElementById("count");
+
+  function sorted() {
+    return [...items].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return a.order - b.order;
+    });
+  }
+
+  function render() {
+    list.innerHTML = "";
+    const rows = sorted();
+
+    empty.hidden = rows.length > 0;
+
+    rows.forEach((item) => {
+      const li = document.createElement("li");
+      li.className = item.done ? "done" : "";
+      li.dataset.id = item.id;
+
+      const check = document.createElement("div");
+      check.className = "check";
+      check.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M2 8L6 12L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      check.setAttribute("role", "checkbox");
+      check.setAttribute("aria-checked", String(item.done));
+      check.tabIndex = 0;
+      check.addEventListener("click", () => toggle(item.id));
+      check.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle(item.id);
+        }
+      });
+
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = item.text;
+      label.addEventListener("click", () => toggle(item.id));
+
+      const remove = document.createElement("button");
+      remove.className = "remove";
+      remove.type = "button";
+      remove.textContent = "✕";
+      remove.setAttribute("aria-label", "Delete");
+      remove.addEventListener("click", () => removeItem(item.id));
+
+      li.append(check, label, remove);
+      list.appendChild(li);
+    });
+
+    const remaining = items.filter((i) => !i.done).length;
+    count.textContent = items.length
+      ? `${remaining} left · ${items.length} total`
+      : "";
+  }
+
+  function toggle(id) {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    item.done = !item.done;
+    save(items);
+    render();
+  }
+
+  function removeItem(id) {
+    items = items.filter((i) => i.id !== id);
+    save(items);
+    render();
+  }
+
+  let nextOrder = items.reduce((max, i) => Math.max(max, i.order || 0), 0) + 1;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    items.push({
+      id: crypto.randomUUID(),
+      text,
+      done: false,
+      order: nextOrder++,
+    });
+    save(items);
+    input.value = "";
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
