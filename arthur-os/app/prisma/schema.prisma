@@ -1,6 +1,8 @@
 // Arthur Digital Works OS — v1 vertical-slice data model.
 // See ../../docs/data-schema.md for the full explanation of every model.
-// Single-tenant (one Owner) by design — see ../../docs/architecture.md.
+// User/Workspace/Membership shape, single-tenant behavior by design (one
+// Workspace, seeded once, no signup/invite route) — see
+// ../../docs/architecture.md and ../../docs/owner-decisions-needed.md #8.
 
 generator client {
   provider = "prisma-client-js"
@@ -90,15 +92,43 @@ enum ApprovalAction {
   SEND_MASS_OUTREACH
 }
 
-// The single operator account. v1 is intentionally single-tenant — see
-// ../../docs/data-schema.md's "full-platform target schema" for how this
-// generalizes to real multi-user access later.
-model Owner {
-  id           String   @id @default(cuid())
-  email        String   @unique
+// The operator account. Generalized to User + Workspace + Membership per
+// owner-decisions-needed.md #8, matching the exact pattern
+// ../../../revenue-os/app/prisma/schema.prisma already proves out — so a
+// real second operator later is a small change (a second Membership row),
+// not a schema migration. Behaviorally, v1 is still single-tenant: there is
+// exactly one Workspace (seeded by prisma/seed.ts) and no signup/invite
+// route exists to create a second User or Membership — see
+// ../../docs/data-schema.md for what "small change later" actually means.
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
   name         String?
   passwordHash String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+}
+
+model Workspace {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+}
+
+// A Membership is what grants a User access to a Workspace — the same
+// shape revenue-os/app uses. "owner" is the only role seeded/used in v1;
+// "member" exists in the type for when a real second operator is added.
+model Membership {
+  id          String    @id @default(cuid())
+  role        String    @default("owner") // "owner" | "member"
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, workspaceId])
 }
 
 // Singleton settings row. Always exactly one row in v1.

@@ -81,6 +81,25 @@ slice, or production), not before v1 ships.
    does and doesn't cover — notably, a distributed (multi-IP) flood isn't
    addressed; that's deferred until there's evidence it's actually
    happening, not built speculatively.
+8. **Multi-tenant / team access — RESOLVED (schema only) 2026-08-07.**
+   Derrick doesn't want a real second operator yet, but asked for the
+   schema groundwork so adding one later is small. Implemented: the flat
+   `Owner` model is replaced with `User` + `Workspace` + `Membership` —
+   the exact shape `revenue-os/app/prisma/schema.prisma` already proves
+   out — with `auth.ts` updated to look up via `User`/`Membership` and put
+   `workspaceId` on the session (matching revenue-os's session shape,
+   unused elsewhere for now). `prisma/seed.ts` creates exactly one `User`,
+   one `Workspace` (fixed id `"singleton"`), and one `Membership`
+   (`role: "owner"`). **What did *not* change:** there's still no
+   signup/invite route (no way to create a second `User` or `Membership`
+   through the app), and no other model (`Lead`, `Offer`, `Project`, etc.)
+   is scoped by `workspaceId` — v1 behaves exactly as single-tenant as
+   before. Adding a real second operator later means: a signup/invite
+   route, a `workspaceId` scope on every business-entity query (the way
+   `revenue-os/app/src/lib/currentWorkspace.ts` does it), and — separately
+   — deciding what a non-owner role can actually do (`Membership.role` is
+   currently just a string with no differentiated permissions enforced
+   anywhere).
 
 ## In progress
 
@@ -96,11 +115,3 @@ slice, or production), not before v1 ships.
    the Vercel dashboard without waiting on that). The larger public-launch
    decision (custom domain, production keys, real customer email) stays
    exactly as out-of-scope as before — this only covers a private preview.
-
-## Open
-
-8. **Multi-tenant / team access.** v1 is single-Owner by design. If Arthur
-   Digital Works OS is ever meant to have a second human operator (not
-   buyers — an actual co-operator), that's a schema change (see
-   `data-schema.md`'s full-platform mapping notes) worth deciding on
-   deliberately rather than growing organically.

@@ -26,8 +26,10 @@ auto-approves in Semi-Autonomous/Autonomous mode, custom pricing always
 requires a manual click — see `../docs/approval-policy-matrix.md` for the
 full matrix and `../docs/owner-decisions-needed.md` #4 for why.
 
-It's single-owner (no multi-tenant workspaces, no public signup) — see
-`../docs/architecture.md` for why that's deliberate for v1.
+It's single-tenant in behavior (no signup, no invite flow, exactly one
+Workspace) even though the schema is already `User`/`Workspace`/`Membership`
+— see `../docs/architecture.md` and `../docs/owner-decisions-needed.md` #8
+for why that's deliberate for v1.
 
 ## Before you can run it, you need
 
@@ -104,6 +106,9 @@ template if it's unset or the call fails (see
 - The `/audit` rate limit (`src/lib/rateLimit.ts`) is per-IP only — it
   doesn't defend against a distributed flood from many IPs. See
   `../docs/threat-model.md` threat #18.
+- The data model is already `User`/`Workspace`/`Membership` (not a flat
+  Owner row), but no signup/invite route exists and no business model is
+  scoped by `workspaceId` yet — see `../docs/owner-decisions-needed.md` #8.
 
 ## Where things live
 

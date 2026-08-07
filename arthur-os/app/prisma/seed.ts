@@ -28,9 +28,12 @@ const DEFAULT_POLICY: Array<{ action: ApprovalAction; mode: OperatingMode; requi
   { action: "SEND_MASS_OUTREACH", mode: "AUTONOMOUS", requiresApproval: true },
 ];
 
-// Seeds the single Owner account this app supports in v1 — there is no
-// public signup route — plus the default approval-policy rows. Re-running
-// this script is safe: everything upserts.
+// Seeds the single operator account this app supports in v1 — there is no
+// public signup or invite route — plus the one Workspace, their "owner"
+// Membership, and the default approval-policy rows. Re-running this script
+// is safe: everything upserts. See owner-decisions-needed.md #8 for why
+// this is User/Workspace/Membership (not a flat Owner row) even though v1
+// only ever creates one of each.
 async function main() {
   const email = process.env.OWNER_EMAIL;
   const password = process.env.OWNER_PASSWORD;
@@ -41,10 +44,22 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const owner = await prisma.owner.upsert({
+  const user = await prisma.user.upsert({
     where: { email: email.toLowerCase() },
     create: { email: email.toLowerCase(), passwordHash },
     update: { passwordHash },
+  });
+
+  const workspace = await prisma.workspace.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton", name: "Arthur Digital Works OS" },
+    update: {},
+  });
+
+  await prisma.membership.upsert({
+    where: { userId_workspaceId: { userId: user.id, workspaceId: workspace.id } },
+    create: { userId: user.id, workspaceId: workspace.id, role: "owner" },
+    update: {},
   });
 
   await prisma.settings.upsert({
@@ -61,7 +76,7 @@ async function main() {
     });
   }
 
-  console.log(`Seeded owner account: ${owner.email}`);
+  console.log(`Seeded owner account: ${user.email} (workspace: ${workspace.name})`);
   console.log(`Seeded ${DEFAULT_POLICY.length} approval-policy rows.`);
 }
 

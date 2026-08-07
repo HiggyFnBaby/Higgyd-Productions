@@ -56,10 +56,14 @@ Principles:
 - **Everything is reversible until delivery.** Versioned artifacts, a
   rollback path for production output, and no external side effect (email
   send, publish, charge) happens without a gate check.
-- **Multi-tenant-ready, single-tenant today.** The full data model
-  (`docs/data-schema.md`) is written so a `workspace`/`organization` concept
-  can be added later without a rewrite, but the v1 vertical slice runs
-  single-owner (Derrick only) to keep the first slice small.
+- **Multi-tenant-ready schema, single-tenant behavior today.** The data
+  model already uses `User`/`Workspace`/`Membership` (see
+  `docs/data-schema.md` and `owner-decisions-needed.md` #8), but v1
+  deliberately runs single-tenant behaviorally — exactly one Workspace,
+  seeded once, no signup or invite route — to keep the first slice small.
+  No business model (`Lead`, `Offer`, `Project`, etc.) is scoped by
+  `workspaceId` yet; that's the real work still deferred until a second
+  operator actually exists.
 
 ## What v1 (`../app`) actually builds
 
