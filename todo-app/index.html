@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Todo</title>
+<style>
+  :root {
+    --text: #fbf5ee;
+    --text-muted: rgba(251, 245, 238, 0.62);
+    --card-bg: rgba(30, 20, 17, 0.55);
+    --card-border: rgba(255, 255, 255, 0.14);
+    --card-shadow: rgba(0, 0, 0, 0.5);
+    --separator: rgba(255, 255, 255, 0.12);
+    --row-hover: rgba(255, 255, 255, 0.07);
+    --field-bg: rgba(255, 255, 255, 0.09);
+    --accent: #e8b23d;
+    --accent-ink: #241505;
+    --danger: #ff453a;
+    --pr-low: #34c759;
+    --pr-medium: #ff9f0a;
+    --pr-high: #ff453a;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 9vh 20px 60px;
+    background: #140b08;
+    position: relative;
+  }
+
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+  }
+
+  body::before {
+    inset: -60px;
+    background-image: url("assets/background.jpg");
+    background-size: cover;
+    background-position: center 30%;
+    filter: blur(42px) saturate(1.15) brightness(0.75);
+    transform: scale(1.12);
+    z-index: -2;
+  }
+
+  body::after {
+    background: linear-gradient(165deg, rgba(10, 6, 4, 0.32), rgba(8, 4, 3, 0.62) 55%, rgba(5, 3, 2, 0.8));
+    z-index: -1;
+  }
+
+  main {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 4px 18px;
+  }
+
+  .app-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+
+  .app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: #fff;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  .subtitle {
+    margin: 1px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.78);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    padding: 6px 18px 10px;
+    backdrop-filter: blur(28px) saturate(1.4);
+    -webkit-backdrop-filter: blur(28px) saturate(1.4);
+    box-shadow: 0 20px 45px var(--card-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 2px;
+    border-bottom: 1px solid var(--separator);
+  }
+
+  form input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: var(--field-bg);
+    outline: none;
+    font-size: 16px;
+    color: var(--text);
+    padding: 9px 13px;
+    border-radius: 11px;
+    font-family: inherit;
+    transition: box-shadow 0.15s ease;
+  }
+
+  form input::placeholder {
+    color: var(--text-muted);
+  }
+
+  form input:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+
+  form button {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 55%, transparent);
+    transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+  }
+
+  form button:hover {
+    filter: brightness(1.08);
+  }
+
+  form button:active {
+    transform: scale(0.9);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0 6px;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 2px;
+    border-bottom: 1px solid var(--separator);
+    border-radius: 10px;
+    transition: background 0.15s ease;
+  }
+
+  li:last-child {
+    border-bottom: none;
+  }
+
+  li:hover {
+    background: var(--row-hover);
+  }
+
+  .check {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--text-muted) 70%, transparent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .check:active {
+    transform: scale(0.88);
+  }
+
+  .check svg {
+    width: 13px;
+    height: 13px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  li.done .check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  li.done .check svg {
+    opacity: 1;
+    transform: scale(1);
+    color: var(--accent-ink);
+  }
+
+  .priority {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: color-mix(in srgb, var(--text-muted) 65%, transparent);
+    transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s ease;
+  }
+
+  .priority svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .priority .flag {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    transition: fill 0.15s ease;
+  }
+
+  .priority:active {
+    transform: scale(0.85);
+  }
+
+  .priority.level-low { color: var(--pr-low); }
+  .priority.level-medium { color: var(--pr-medium); }
+  .priority.level-high { color: var(--pr-high); }
+
+  .priority.level-low .flag,
+  .priority.level-medium .flag,
+  .priority.level-high .flag {
+    fill: currentColor;
+  }
+
+  .content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .label {
+    font-size: 16px;
+    line-height: 1.35;
+    cursor: pointer;
+    word-break: break-word;
+    transition: color 0.18s ease;
+    max-width: 100%;
+  }
+
+  li.done .label {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .due-chip {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    background: var(--field-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+
+  .due-chip.overdue {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 22%, transparent);
+  }
+
+  .due-chip.ghost {
+    background: none;
+    padding: 2px 0;
+    opacity: 0;
+  }
+
+  li:hover .due-chip.ghost,
+  li:focus-within .due-chip.ghost {
+    opacity: 0.65;
+  }
+
+  .due-chip.ghost:hover {
+    opacity: 1;
+  }
+
+  li.done .due-chip {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+
+  .due-input {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--field-bg);
+    border: none;
+    border-radius: 8px;
+    padding: 2px 6px;
+    color-scheme: dark;
+  }
+
+  .remove {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: var(--danger);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease;
+  }
+
+  li:hover .remove {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .remove:hover {
+    filter: brightness(1.1);
+  }
+
+  .empty {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 22px 2px;
+    text-align: center;
+  }
+
+  .count {
+    margin: 14px 2px 2px;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+    text-align: center;
+  }
+
+  .check:focus-visible,
+  .priority:focus-visible,
+  .due-chip:focus-visible,
+  .due-input:focus-visible,
+  .remove:focus-visible,
+  form input:focus-visible,
+  form button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="titlebar">
+    <div class="app-icon">
+      <img src="assets/avatar.jpg" alt="" />
+    </div>
+    <div>
+      <h1>Todo</h1>
+      <p class="subtitle" id="subtitle"></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="form">
+      <input id="input" type="text" placeholder="Add a task…" autocomplete="off" autofocus />
+      <button type="submit" aria-label="Add">+</button>
+    </form>
+
+    <ul id="list"></ul>
+    <p id="empty" class="empty" hidden>Nothing here yet ✨</p>
+  </div>
+
+  <p id="count" class="count"></p>
+</main>
+
+<script>
+  const STORAGE_KEY = "minimal-todo-items";
+  const FLAG_SVG = '<svg viewBox="0 0 20 20"><path class="flag" d="M5 2.5v15M5 3.5h9.2c.9 0 1.3 1.1.65 1.72L12 8l2.85 2.78c.65.62.25 1.72-.65 1.72H5" /></svg>';
+  const PRIORITY_ORDER = ["none", "low", "medium", "high"];
+  const PRIORITY_LABEL = { none: "No priority", low: "Low priority", medium: "Medium priority", high: "High priority" };
+
+  function load() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      return raw.map((item) => ({
+        due: null,
+        priority: null,
+        ...item,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  function save(items) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  let items = load();
+  let editingDueId = null;
+
+  const list = document.getElementById("list");
+  const form = document.getElementById("form");
+  const input = document.getElementById("input");
+  const empty = document.getElementById("empty");
+  const count = document.getElementById("count");
+  const subtitle = document.getElementById("subtitle");
+
+  function sorted() {
+    return [...items].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return a.order - b.order;
+    });
+  }
+
+  function startOfToday() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function formatDue(dateStr) {
+    const due = new Date(dateStr + "T00:00:00");
+    const today = startOfToday();
+    const diffDays = Math.round((due - today) / 86400000);
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Tomorrow";
+    if (diffDays === -1) return "Yesterday";
+    return due.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: due.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+    });
+  }
+
+  function render() {
+    list.innerHTML = "";
+    const rows = sorted();
+
+    empty.hidden = rows.length > 0;
+
+    rows.forEach((item) => {
+      const li = document.createElement("li");
+      li.className = item.done ? "done" : "";
+      li.dataset.id = item.id;
+
+      const check = document.createElement("div");
+      check.className = "check";
+      check.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M2 8L6 12L14 3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      check.setAttribute("role", "checkbox");
+      check.setAttribute("aria-checked", String(item.done));
+      check.tabIndex = 0;
+      check.addEventListener("click", () => toggle(item.id));
+      check.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle(item.id);
+        }
+      });
+
+      const priorityBtn = document.createElement("button");
+      const level = item.priority || "none";
+      priorityBtn.type = "button";
+      priorityBtn.className = `priority level-${level}`;
+      priorityBtn.innerHTML = FLAG_SVG;
+      priorityBtn.setAttribute("aria-label", `${PRIORITY_LABEL[level]}. Click to change.`);
+      priorityBtn.addEventListener("click", () => cyclePriority(item.id));
+
+      const content = document.createElement("div");
+      content.className = "content";
+
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = item.text;
+      label.addEventListener("click", () => toggle(item.id));
+
+      content.appendChild(label);
+
+      if (editingDueId === item.id) {
+        const dueInput = document.createElement("input");
+        dueInput.type = "date";
+        dueInput.className = "due-input";
+        if (item.due) dueInput.value = item.due;
+        dueInput.addEventListener("change", (e) => {
+          item.due = e.target.value || null;
+          editingDueId = null;
+          save(items);
+          render();
+        });
+        dueInput.addEventListener("blur", () => {
+          editingDueId = null;
+          render();
+        });
+        content.appendChild(dueInput);
+        requestAnimationFrame(() => {
+          dueInput.focus();
+          if (dueInput.showPicker) {
+            try { dueInput.showPicker(); } catch {}
+          }
+        });
+      } else {
+        const dueChip = document.createElement("button");
+        dueChip.type = "button";
+        const overdue = item.due && !item.done && new Date(item.due + "T00:00:00") < startOfToday();
+        if (item.due) {
+          dueChip.className = `due-chip${overdue ? " overdue" : ""}`;
+          dueChip.textContent = formatDue(item.due);
+          dueChip.setAttribute("aria-label", `Due ${formatDue(item.due)}. Click to change.`);
+        } else {
+          dueChip.className = "due-chip ghost";
+          dueChip.textContent = "+ Add date";
+          dueChip.setAttribute("aria-label", "Add due date");
+        }
+        dueChip.addEventListener("click", () => {
+          editingDueId = item.id;
+          render();
+        });
+        content.appendChild(dueChip);
+      }
+
+      const remove = document.createElement("button");
+      remove.className = "remove";
+      remove.type = "button";
+      remove.textContent = "✕";
+      remove.setAttribute("aria-label", "Delete");
+      remove.addEventListener("click", () => removeItem(item.id));
+
+      li.append(check, priorityBtn, content, remove);
+      list.appendChild(li);
+    });
+
+    const remaining = items.filter((i) => !i.done).length;
+    count.textContent = items.length
+      ? `${remaining} left · ${items.length} total`
+      : "";
+    subtitle.textContent = items.length
+      ? `${remaining} remaining`
+      : "All clear";
+  }
+
+  function toggle(id) {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    item.done = !item.done;
+    save(items);
+    render();
+  }
+
+  function cyclePriority(id) {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    const idx = PRIORITY_ORDER.indexOf(item.priority || "none");
+    const next = PRIORITY_ORDER[(idx + 1) % PRIORITY_ORDER.length];
+    item.priority = next === "none" ? null : next;
+    save(items);
+    render();
+  }
+
+  function removeItem(id) {
+    items = items.filter((i) => i.id !== id);
+    save(items);
+    render();
+  }
+
+  let nextOrder = items.reduce((max, i) => Math.max(max, i.order || 0), 0) + 1;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    items.push({
+      id: crypto.randomUUID(),
+      text,
+      done: false,
+      order: nextOrder++,
+      due: null,
+      priority: null,
+    });
+    save(items);
+    input.value = "";
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
