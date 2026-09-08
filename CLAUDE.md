@@ -2,14 +2,32 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Who this repo is for
+
+**Higgyd-Productions** is Derrick Higgins' "Foundation OS." Derrick is a
+**no-code creator**: he builds and directs apps and automations with
+Claude's help, but does not write code himself and has no prior developer
+background. This changes how you should write and explain things here, not
+just what you build:
+
+- In docs, commit messages, and any explanation aimed at Derrick: use plain
+  language. Define jargon on first use (e.g. "a **subagent** is a specialist
+  Claude Code persona with its own job and instructions"). Never assume
+  prior dev knowledge.
+- In code: normal engineering conventions apply (see below) — the
+  plain-language rule is for docs and explanations, not for variable names.
+- Derrick's buyer profile for anything sellable is **B2B small businesses**
+  — pricing and positioning guidance should default to that unless a doc
+  says otherwise.
+
 ## Repository shape
 
-This is Derrick Higgins's "Foundation OS" repo — not a single app. It holds
-multiple, independent, self-contained projects, each with its own docs,
-`.claude/agents/`, and (usually) its own Next.js + Prisma app under `app/`.
-Projects do **not** share a database or codebase with each other, even when
-they share buyers or lessons. Always work inside one project's directory;
-don't assume conventions in one project apply to another without checking.
+This is not a single app. It holds multiple, independent, self-contained
+projects, each with its own docs, `.claude/agents/`, and (usually) its own
+Next.js + Prisma app under `app/`. Projects do **not** share a database or
+codebase with each other, even when they share buyers or lessons. Always
+work inside one project's directory; don't assume conventions in one
+project apply to another without checking.
 
 Current projects:
 
@@ -24,6 +42,15 @@ Current projects:
   conversation-system-builder), implemented as a multi-tenant CRM. Start
   with `revenue-os/business-brief.md` and
   `revenue-os/runbooks/revenue-agent-runbook.md`.
+- **`first-reply/`** — FirstReply: the first pilot product sold out of
+  `revenue-os` (real estate agents buyer). A Next.js + Prisma app where an
+  agent's lead-capture link triggers an instant auto-reply email plus a
+  3-day/10-day follow-up cadence, so a slow response never loses a lead.
+  Start with `first-reply/README.md`. Its offer brief, content angles, and
+  conversation blueprint live under `revenue-os/offer-briefs/`,
+  `revenue-os/content-angles/`, and `revenue-os/conversation-blueprints/`
+  (real-estate-agents.md in each) — read those first, this app is just "how
+  to run it."
 - **`docs/monetization-strategy.md`** — a living cross-portfolio doc about
   monetizing Derrick's ~80+ other (non-repo) apps. `revenue-os/` is the
   engine for that work. Read it before starting monetization-strategy work,
@@ -31,7 +58,9 @@ Current projects:
   the only memory that survives between sessions.
 - **`db/workspace_schema.sql`** — a standalone Postgres schema (contacts /
   projects / tasks) for a generic workspace database, not tied to either app
-  above.
+  above. `db/airtable-migration/` holds the export/import tooling and data
+  snapshots for migrating existing Airtable bases (Revenue OS CRM, Content
+  OPS) into Postgres — see `docs/airtable-migration-strategy.md`.
 
 When a task only concerns one project, `cd` into it (or scope file
 operations to it) and rely on that project's own README/CLAUDE.md for
@@ -39,9 +68,9 @@ specifics rather than duplicating those details here.
 
 ## Both Next.js apps: common commands
 
-`arthur-os/app/` and `revenue-os/app/` are both Next.js 14 (App Router) +
-Prisma + TypeScript + Tailwind, with an identical script surface. Run these
-from inside the relevant `app/` directory:
+`arthur-os/app/`, `revenue-os/app/`, and `first-reply/` are all Next.js 14
+(App Router) + Prisma + TypeScript + Tailwind, with an identical script
+surface. Run these from inside the relevant app directory:
 
 ```bash
 npm install
@@ -54,18 +83,19 @@ npm run db:push          # push prisma/schema.prisma to the database (no migrati
 npm run db:migrate       # prisma migrate dev
 ```
 
-There is no configured test runner (no `test` script, no test files) in
-either app as of this writing — don't assume Jest/Vitest exists. Verifying a
-change means: `npm run typecheck`, `npm run build`, and, for anything
-touching a live flow, actually exercising it against local Stripe
-test-mode/webhooks as described in each app's README.
+There is no configured test runner (no `test` script, no test files) in any
+of these apps as of this writing — don't assume Jest/Vitest exists.
+Verifying a change means: `npm run typecheck`, `npm run build`, and, for
+anything touching a live flow, actually exercising it against local Stripe
+test-mode/webhooks or a real (non-production) email send as described in
+each app's README.
 
 `arthur-os/app` additionally has `npm run db:seed` (creates the single
 seeded Owner login from `OWNER_EMAIL`/`OWNER_PASSWORD` — this app has no
 public signup).
 
-Both apps need their own `.env` (copy from `.env.example` in that `app/`
-dir) and a Postgres database before `dev`/`build` will fully work — see each
+Each app needs its own `.env` (copy from `.env.example` in that directory)
+and a Postgres database before `dev`/`build` will fully work — see each
 app's README for the exact required variables. Never put real production
 credentials in `.env.example` or commit a filled-in `.env`.
 
@@ -80,7 +110,10 @@ agent-contract docs cannot drift apart:
 
 - `revenue-os/app/src/lib/agents.ts` reads `../.claude/agents/*.md` and
   calls the Claude API with that file's content as the system prompt, when
-  a user clicks "Run agent" on a lead.
+  a user clicks "Run agent" on a lead. If you add a fifth agent, add it to
+  `revenue-os/.claude/agents/`, then register it in `AGENT_FILES` and
+  `AGENT_FOR_STAGE` in `src/lib/agents.ts` — don't hardcode a prompt string
+  in the app.
 - `arthur-os/.claude/agents/*.md` define the contracts that
   `arthur-os/app/src/lib/*` (e.g. `qualification.ts`, `production.ts`)
   implement or will eventually call into.
@@ -96,10 +129,17 @@ with that structure.
 
 ## Cross-project conventions worth knowing
 
-- **Provider-agnostic integration points.** Both apps wrap billing behind an
-  interface rather than calling Stripe directly everywhere:
+- **Tenant isolation goes through one chokepoint.** `revenue-os/app`'s
+  `src/lib/currentWorkspace.ts` (`requireWorkspaceId()`) and
+  `first-reply`'s `src/lib/currentAgent.ts` (`requireAgentId()`) are each
+  the one place that resolves the current tenant from the session. Every
+  API route touching tenant-owned data must call it first and return 401 on
+  `null` — never trust an id from anywhere else (a request body, a query
+  param).
+- **Provider-agnostic integration points.** Apps wrap billing/email behind
+  an interface rather than calling the SDK directly everywhere:
   `revenue-os/app/src/lib/billing/` (`types.ts` defines the interface,
-  `stripe.ts` is the concrete implementation). `arthur-os/app/src/lib/email/`
+  `stripe.ts` is the concrete implementation); `arthur-os/app/src/lib/email/`
   does the same for email (`test` provider logs to the `EmailEvent` table
   and sends nothing; a `resend` implementation exists behind
   `EMAIL_PROVIDER=resend`). Follow this pattern — add a new provider as a
@@ -113,17 +153,37 @@ with that structure.
   approves its own work) is enforced at this layer, not by convention.
 - **Idempotency on webhooks.** Stripe webhook handlers key off the Stripe
   session/event ID so replays don't double-create Orders/Projects — follow
-  this when touching `api/stripe/webhook` or `api/billing/webhook` in
-  either app.
-- **Test/sandbox mode until explicitly authorized.** Both apps default to
+  this when touching `api/stripe/webhook` or `api/billing/webhook` in any
+  app.
+- **Stage change always creates a task (revenue-os).**
+  `revenue-os/app/src/lib/automations.ts` auto-creates a next-action `Task`
+  on every pipeline stage transition via `NEXT_ACTION_BY_STAGE`, so a lead
+  never silently goes quiet. If you add a new `PipelineStage`, add its entry
+  here (and to `AGENT_FOR_STAGE` if an agent applies) or the `Record` type
+  will fail to compile.
+- **Test/sandbox mode until explicitly authorized.** Apps default to
   Stripe test-mode keys and non-production email sending. Do not wire in
   live payment keys or enable real outbound email unless the user
   explicitly authorizes going to production — this is a repeated,
-  intentional constraint in both projects' docs, not an oversight to "fix."
+  intentional constraint across these projects' docs, not an oversight to
+  "fix."
 - **v1 is a deliberately small vertical slice, not the full design.** Each
   project's docs describe a much larger target platform than what's
   currently built (see `arthur-os/docs/vertical-slice-plan.md` and the
-  "What's real vs. what's a v1 shortcut" sections in both `app/README.md`
-  files). Don't build toward the full target architecture unless asked —
+  "What's real vs. what's a v1 shortcut" sections in the `app`/project
+  READMEs). Don't build toward the full target architecture unless asked —
   extend the existing vertical slice, and check `docs/owner-decisions-needed.md`
   (arthur-os) before making a call the owner hasn't made yet.
+- **No CI, no automated tests currently exist anywhere in this repo.**
+  Treat `npm run typecheck` / `npm run build` as the verification bar for
+  app changes until a test suite exists.
+- **Don't commit secrets.** `.env` is gitignored; only ever edit
+  `.env.example` with placeholder/instructional values.
+- **License note:** the file `CCB-NC 4.0` at the repo root is named for
+  Creative Commons BY-NC 4.0 but its actual contents are the CC0 1.0
+  Universal legal code. Flag this mismatch to Derrick rather than silently
+  assuming either license is authoritative if it becomes relevant to a task.
+- **Living docs vs. static docs:** `docs/monetization-strategy.md` is a
+  living doc (append to its session log, don't just overwrite). Project
+  business briefs, runbooks, and READMEs are closer to a static spec —
+  update them in place when they go stale, no session-log convention there.

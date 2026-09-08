@@ -136,3 +136,77 @@ pilot #1.
   an Anthropic API key, and a Stripe account — none wired to real credentials
   yet). Next: get real credentials in, run it end-to-end, then return to the
   pilot-app shortlist.
+- **2026-07-29** — Revenue OS is now live in production, not just locally
+  verified. Wired up a real Supabase Postgres database and a real Anthropic
+  API key, then deployed `revenue-os/app` to Vercel at
+  `higgyd-productions.vercel.app`. Verified end-to-end on the live site:
+  signup creates a real workspace/user/membership, login works, the pipeline
+  board loads, and moving a lead between stages auto-creates the next-action
+  task exactly as designed. Billing/Stripe is still not wired up (env vars
+  left blank) — that's the one piece of the v1 app that remains unproven for
+  real; everything else (auth, multi-tenancy, the agent chain automation,
+  hosting) is now confirmed working outside a sandbox.
+  Notes for next time:
+  - **Use Supabase's connection *pooler* string, not the "direct connection"
+    one.** The direct connection host is IPv6-only and fails to connect from
+    a lot of environments (this sandbox included); the pooler host
+    (`aws-*.pooler.supabase.com`, port 5432 for a normal server app) works
+    everywhere. Also: any password with `@` or `%` in it must be
+    percent-encoded before it'll work inside the connection string URL.
+  - Vercel's "Root Directory" for this project must be set to
+    `revenue-os/app` (the app lives in a subfolder, not the repo root), and
+    the "Include source files outside of the Root Directory" toggle must be
+    turned on — the "Run agent" feature reads `.claude/agents/*.md` from
+    *outside* that folder, and silently can't find them without this.
+  - The Vercel **Build Command** needs to run `npx prisma db push` before
+    `next build`, so schema changes actually apply to the real database on
+    every deploy.
+  - Derrick already had an unrelated, older Vercel project also named
+    similarly (`revenue-os-ai`, connected to a separate `Revenue-OS-AI`
+    repo) from an earlier abandoned attempt — cost real time getting
+    confused between the two. The correct project for this repo is
+    `higgyd-productions` on Vercel, connected to
+    `HiggyFnBaby/Higgyd-Productions`.
+  - Both the Supabase database password and the Anthropic API key had to be
+    rotated mid-session after being pasted in chat — a reminder to generate
+    credentials directly into a password manager or the target dashboard
+    where possible, rather than typing/pasting them through a conversation.
+  Next: decide on and wire up a payment processor (open decision above is
+  still open), then return to picking the 1–3 pilot apps from the 80+
+  portfolio now that the monetization template (auth + hosting + database +
+  AI automation) is proven live end-to-end, not just in theory.
+- **2026-07-29 (cont.)** — Started wiring up Stripe (test mode): created one
+  recurring Price and added `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` to
+  Vercel. `STRIPE_WEBHOOK_SECRET` still not set up — subscription status
+  won't update after a real checkout until that's added. Note: the app only
+  supports a single price/tier right now, not multiple plans; adding real
+  tiers would need new app code (a plan picker + multiple Stripe Prices),
+  not just Stripe config — flagging as a future decision, not started.
+  Separately, discovered a **second, disconnected repo**
+  (`HiggyFnBaby/Revenue-OS-AI`) from an earlier, abandoned session — same
+  four-agent scaffold as `revenue-os/`, but it had actually been *run*
+  against a real niche. Its research is real and evidenced (see
+  methodology caveats inside each file): a signal report, offer brief,
+  content angles, and conversation blueprint for **"RealEstateOS
+  Enterprise"** — a real-estate-agent CRM angle on slow lead response time
+  (the signal report itself already pointed back at this doc, so it always
+  belonged here). Copied all four files into `revenue-os/signal-reports/`,
+  `revenue-os/offer-briefs/`, `revenue-os/content-angles/`, and
+  `revenue-os/conversation-blueprints/` so this repo has one home for
+  Revenue OS work going forward — treat `Revenue-OS-AI` as superseded, not
+  a second active project. Next: finish the Stripe webhook, then decide
+  whether "RealEstateOS Enterprise" is worth pursuing as pilot #1 — the
+  groundwork (evidenced pain point + priced offer + angles + a close
+  script) is already sitting in `revenue-os/`, unlike every other portfolio
+  app which still has none of that.
+- **2026-07-29 (cont. 2)** — Stripe billing finished and verified live:
+  webhook endpoint added (`customer.subscription.created/updated/deleted`),
+  `STRIPE_WEBHOOK_SECRET` set in Vercel, then tested end-to-end with a real
+  Stripe test-mode checkout — billing page correctly flipped from
+  `Status: NONE` to `Status: ACTIVE` after payment, confirming the full
+  chain (checkout to Stripe to webhook to database) works. `revenue-os/app`
+  is now a complete, working v1: auth, multi-tenancy, the pipeline board,
+  AI-agent automation, and billing all proven live, not just locally.
+  Derrick decided to move forward on FirstReply (the RealEstateOS
+  Enterprise offer) as the next thing to actually build, asked to be led
+  through it. Next: scope and build FirstReply as its own project.
