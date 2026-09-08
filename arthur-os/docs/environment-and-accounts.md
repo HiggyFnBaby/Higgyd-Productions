@@ -18,9 +18,12 @@ on where to get each value lives in `../app/.env.example`; this doc is the
 3. **(Optional) A Resend account**, only if/when Derrick wants real email
    sending instead of the default test-mode log. Not required to run or
    demo the slice — every email still gets generated and logged either way.
-4. **(Optional) An Anthropic API key**, only if the production stub is later
-   upgraded to call Claude for deliverable drafting instead of the
-   deterministic template. Not required for v1's default behavior.
+4. **(Optional) An Anthropic API key.** When set, production drafting calls
+   Claude (using `.claude/agents/production-agent.md` as the system prompt)
+   instead of the deterministic template — see
+   `owner-decisions-needed.md` #3. Not required to run or demo the slice:
+   without a key, or if the Claude call fails, drafting falls back to the
+   template automatically.
 
 ## Environment variables
 
@@ -39,7 +42,7 @@ See `../app/.env.example` for the authoritative, copy-pasteable list. Summary:
 | `EMAIL_PROVIDER` | No (defaults to `test`) | `test` (log only) or `resend` |
 | `RESEND_API_KEY` | Only if `EMAIL_PROVIDER=resend` | Real email sending |
 | `EMAIL_FROM` | Only if `EMAIL_PROVIDER=resend` | Verified sender address |
-| `ANTHROPIC_API_KEY` | No | Only used if production drafting is upgraded to call Claude |
+| `ANTHROPIC_API_KEY` | No (defaults to template drafting) | Switches production drafting to a real Claude call |
 
 ## What Derrick needs to explicitly authorize before this goes live
 

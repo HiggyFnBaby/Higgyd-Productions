@@ -13,6 +13,14 @@ not just by reading code.
 - [ ] The lead's initial `status` follows the documented scoring thresholds
       in `src/lib/qualification.ts`, and an `AuditEvent` records the
       automatic classification with actor `"Lead Hunter (auto)"`.
+- [ ] Submitting the form with the hidden `website` honeypot field non-empty
+      returns the same 201 success response as a real submission, but
+      creates no `Lead` row.
+- [ ] Submitting more than `AUDIT_FORM_RATE_LIMIT.max` times (default 5)
+      from the same IP within the window (default 10 minutes) returns 429
+      on the next attempt and writes an `AuditEvent` with action
+      `RATE_LIMIT_BLOCKED`; a 6th submission from a *different* IP in the
+      same window still succeeds.
 
 ## Offer + approval
 - [ ] Only an authenticated Owner can view `/admin/leads/[id]` or create an
@@ -24,6 +32,29 @@ not just by reading code.
       Checkout URL.
 - [ ] The Checkout URL, opened in Stripe test mode with a Stripe test card,
       completes a real (test) payment.
+
+## Approval-policy engine (owner-decisions-needed.md #4)
+- [ ] With Operating Mode set to Admin, creating a standard-priced
+      (catalog-default) offer leaves it in `DRAFT` — the manual "Approve"
+      action is still required.
+- [ ] With Operating Mode set to Semi-Autonomous or Autonomous, creating a
+      standard-priced offer immediately returns status `CHECKOUT_CREATED`
+      with a real Stripe test-mode checkout URL populated, and writes an
+      `AuditEvent` with action `AUTO_APPROVE_OFFER_AND_CREATE_CHECKOUT` and
+      actor `"Arthur (Sales Closer — auto-approved per policy)"`.
+- [ ] With Operating Mode set to Semi-Autonomous or Autonomous, creating an
+      offer at any price other than the catalog default leaves it in
+      `DRAFT` regardless of mode — the never-autonomous floor for custom
+      pricing applies even in Autonomous mode.
+- [ ] The offer detail page shows "Approved by: Owner" for a manually
+      approved offer and "Approved by: Arthur (Sales Closer — auto-approved
+      per policy)" for an auto-approved one.
+- [ ] Deleting or editing `ApprovalPolicy` rows for `DELIVER_PROJECT`,
+      `ISSUE_REFUND`, `PUBLISH_PUBLIC_CONTENT`, `SEND_MASS_OUTREACH`, or
+      `APPROVE_CUSTOM_OFFER` to `requiresApproval: false` directly in the
+      database does **not** change behavior — `requiresApproval()` checks
+      the hardcoded `NEVER_AUTONOMOUS_ACTIONS` floor before ever reading a
+      policy row for these.
 
 ## Payment verification
 - [ ] `POST /api/stripe/webhook` rejects a request with an invalid/missing

@@ -16,6 +16,7 @@ export function AuditForm() {
     painPoint: "",
     monthlyRevenueRange: "",
     urgency: "",
+    website: "", // honeypot — see src/app/api/leads/route.ts. Must stay empty.
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,22 @@ export function AuditForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Honeypot: hidden from real users (CSS + off-screen + not tab-reachable),
+          left in the DOM for bots that fill every field they find. A real
+          screen-reader user is unaffected — aria-hidden removes it from the
+          accessibility tree entirely, so it's not announced or navigable. */}
+      <div className="absolute left-[-9999px]" aria-hidden="true">
+        <label htmlFor="website">Website</label>
+        <input
+          type="text"
+          id="website"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={form.website}
+          onChange={(e) => update("website", e.target.value)}
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <input
           type="text"

@@ -7,9 +7,12 @@ import type { OperatingMode } from "@prisma/client";
 const MODES: OperatingMode[] = ["ADMIN", "SEMI_AUTONOMOUS", "AUTONOMOUS"];
 
 // Always visible per ../../../CLAUDE.md's mobile-first interface
-// requirement. Changing it is real and audit-logged, but in v1 it does not
-// itself relax any approval gate — see
-// ../../../docs/approval-policy-matrix.md, and the note below.
+// requirement. Changing it is real, audit-logged, and — as of the
+// approval-policy engine (../../../docs/owner-decisions-needed.md #4) —
+// actually changes behavior: Semi-Autonomous/Autonomous skip the manual
+// "Approve" click for standard-priced offers. Everything else (custom
+// pricing, QA/red-team sign-off, delivery) stays manual in every mode — see
+// ../../../docs/approval-policy-matrix.md.
 export function ModeSelector({ currentMode }: { currentMode: OperatingMode }) {
   const router = useRouter();
   const [mode, setMode] = useState(currentMode);
@@ -47,7 +50,8 @@ export function ModeSelector({ currentMode }: { currentMode: OperatingMode }) {
         </select>
       </div>
       <p className="max-w-xs text-xs text-slate-400">
-        v1: every payment, delivery, and QA/red-team sign-off still requires a manual click in every mode.
+        Semi-Autonomous/Autonomous auto-approve standard-priced offers (checkout link generation) only. Custom
+        pricing, delivery, and QA/red-team sign-off always require a manual click.
       </p>
     </div>
   );

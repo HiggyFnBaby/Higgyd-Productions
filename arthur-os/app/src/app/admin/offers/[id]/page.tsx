@@ -17,6 +17,22 @@ export default async function OfferDetailPage({ params }: { params: { id: string
   const catalogEntry = OFFER_CATALOG[offer.package];
   const canApprove = offer.status === "DRAFT" || offer.status === "PENDING_OWNER_APPROVAL";
 
+  // Shows who/what actually approved this offer — important now that
+  // approval can happen automatically (see
+  // ../../../../../docs/owner-decisions-needed.md #4). Pulled from the
+  // audit log rather than a dedicated column so there's exactly one source
+  // of truth for "what happened," per ../../../../../docs/threat-model.md #9.
+  const approvalEvent = offer.approvedAt
+    ? await prisma.auditEvent.findFirst({
+        where: {
+          entityType: "Offer",
+          entityId: offer.id,
+          action: { in: ["APPROVE_OFFER_AND_CREATE_CHECKOUT", "AUTO_APPROVE_OFFER_AND_CREATE_CHECKOUT"] },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    : null;
+
   return (
     <div className="mx-auto max-w-xl">
       <Link href={`/admin/leads/${offer.leadId}`} className="text-sm text-slate-500 hover:underline">
@@ -41,6 +57,9 @@ export default async function OfferDetailPage({ params }: { params: { id: string
                 {offer.stripeCheckoutUrl}
               </a>
             </p>
+            {approvalEvent && (
+              <p className="mt-1 text-xs text-slate-500">Approved by: {approvalEvent.actor}</p>
+            )}
           </div>
         )}
 

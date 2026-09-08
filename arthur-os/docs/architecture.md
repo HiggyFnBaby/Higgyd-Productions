@@ -56,10 +56,14 @@ Principles:
 - **Everything is reversible until delivery.** Versioned artifacts, a
   rollback path for production output, and no external side effect (email
   send, publish, charge) happens without a gate check.
-- **Multi-tenant-ready, single-tenant today.** The full data model
-  (`docs/data-schema.md`) is written so a `workspace`/`organization` concept
-  can be added later without a rewrite, but the v1 vertical slice runs
-  single-owner (Derrick only) to keep the first slice small.
+- **Multi-tenant-ready schema, single-tenant behavior today.** The data
+  model already uses `User`/`Workspace`/`Membership` (see
+  `docs/data-schema.md` and `owner-decisions-needed.md` #8), but v1
+  deliberately runs single-tenant behaviorally — exactly one Workspace,
+  seeded once, no signup or invite route — to keep the first slice small.
+  No business model (`Lead`, `Offer`, `Project`, etc.) is scoped by
+  `workspaceId` yet; that's the real work still deferred until a second
+  operator actually exists.
 
 ## What v1 (`../app`) actually builds
 
@@ -70,9 +74,11 @@ test/sandbox mode:
 Free AI Business Audit (public lead magnet)
         │  POST /api/leads  → Lead created, auto-scored (Lead Hunter contract)
         ▼
-Owner reviews lead in Command Center → creates + approves an Offer
+Owner reviews lead in Command Center → creates (+ approves) an Offer
         │  POST /api/offers, POST /api/offers/:id/approve
-        │  (Sales Closer contract; payment stays owner-gated in every mode)
+        │  (Sales Closer contract; standard-priced offers auto-approve in
+        │   Semi-Autonomous/Autonomous mode — custom pricing always
+        │   owner-gated, in every mode — see the approval-policy matrix)
         ▼
 Stripe Checkout (test mode) — one-time payment for the flagship package
         │  webhook: checkout.session.completed
@@ -97,9 +103,10 @@ Deliberately out of scope for v1 (tracked in `owner-decisions-needed.md` and
 `vertical-slice-plan.md`'s "not built yet" section): multi-tenant workspaces,
 OAuth login/Google sign-in, real Gmail send, subscription/license billing,
 the FAQ/knowledge engine, analytics dashboard, support tickets, offline
-draft sync, and the mode-conditional autonomy described in `CLAUDE.md`'s
-Semi-Autonomous/Autonomous modes (all consequential actions stay manual in
-v1, in every mode — see the approval-policy matrix).
+draft sync, and mode-conditional autonomy for anything beyond standard-priced
+offer approval — delivery, refunds, publishing, and mass outreach sit on a
+hardcoded never-autonomous floor regardless of mode (see the approval-policy
+matrix).
 
 ## Stack
 

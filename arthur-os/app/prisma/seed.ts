@@ -1,10 +1,39 @@
-import { PrismaClient } from "@prisma/client";
+import { ApprovalAction, OperatingMode, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-// Seeds the single Owner account this app supports in v1 — there is no
-// public signup route. Re-running this script is safe: it upserts on email.
+// Kept as a literal here (not imported from src/lib/policy.ts) so this
+// script has no dependency on tsconfig path-alias resolution under tsx —
+// must be kept in sync by hand with src/lib/policy.ts's DEFAULT_POLICY. See
+// ../docs/owner-decisions-needed.md #4.
+const DEFAULT_POLICY: Array<{ action: ApprovalAction; mode: OperatingMode; requiresApproval: boolean }> = [
+  { action: "APPROVE_STANDARD_OFFER", mode: "ADMIN", requiresApproval: true },
+  { action: "APPROVE_STANDARD_OFFER", mode: "SEMI_AUTONOMOUS", requiresApproval: false },
+  { action: "APPROVE_STANDARD_OFFER", mode: "AUTONOMOUS", requiresApproval: false },
+  { action: "APPROVE_CUSTOM_OFFER", mode: "ADMIN", requiresApproval: true },
+  { action: "APPROVE_CUSTOM_OFFER", mode: "SEMI_AUTONOMOUS", requiresApproval: true },
+  { action: "APPROVE_CUSTOM_OFFER", mode: "AUTONOMOUS", requiresApproval: true },
+  { action: "DELIVER_PROJECT", mode: "ADMIN", requiresApproval: true },
+  { action: "DELIVER_PROJECT", mode: "SEMI_AUTONOMOUS", requiresApproval: true },
+  { action: "DELIVER_PROJECT", mode: "AUTONOMOUS", requiresApproval: true },
+  { action: "ISSUE_REFUND", mode: "ADMIN", requiresApproval: true },
+  { action: "ISSUE_REFUND", mode: "SEMI_AUTONOMOUS", requiresApproval: true },
+  { action: "ISSUE_REFUND", mode: "AUTONOMOUS", requiresApproval: true },
+  { action: "PUBLISH_PUBLIC_CONTENT", mode: "ADMIN", requiresApproval: true },
+  { action: "PUBLISH_PUBLIC_CONTENT", mode: "SEMI_AUTONOMOUS", requiresApproval: true },
+  { action: "PUBLISH_PUBLIC_CONTENT", mode: "AUTONOMOUS", requiresApproval: true },
+  { action: "SEND_MASS_OUTREACH", mode: "ADMIN", requiresApproval: true },
+  { action: "SEND_MASS_OUTREACH", mode: "SEMI_AUTONOMOUS", requiresApproval: true },
+  { action: "SEND_MASS_OUTREACH", mode: "AUTONOMOUS", requiresApproval: true },
+];
+
+// Seeds the single operator account this app supports in v1 — there is no
+// public signup or invite route — plus the one Workspace, their "owner"
+// Membership, and the default approval-policy rows. Re-running this script
+// is safe: everything upserts. See owner-decisions-needed.md #8 for why
+// this is User/Workspace/Membership (not a flat Owner row) even though v1
+// only ever creates one of each.
 async function main() {
   const email = process.env.OWNER_EMAIL;
   const password = process.env.OWNER_PASSWORD;
@@ -15,10 +44,22 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const owner = await prisma.owner.upsert({
+  const user = await prisma.user.upsert({
     where: { email: email.toLowerCase() },
     create: { email: email.toLowerCase(), passwordHash },
     update: { passwordHash },
+  });
+
+  const workspace = await prisma.workspace.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton", name: "Arthur Digital Works OS" },
+    update: {},
+  });
+
+  await prisma.membership.upsert({
+    where: { userId_workspaceId: { userId: user.id, workspaceId: workspace.id } },
+    create: { userId: user.id, workspaceId: workspace.id, role: "owner" },
+    update: {},
   });
 
   await prisma.settings.upsert({
@@ -27,7 +68,16 @@ async function main() {
     update: {},
   });
 
-  console.log(`Seeded owner account: ${owner.email}`);
+  for (const row of DEFAULT_POLICY) {
+    await prisma.approvalPolicy.upsert({
+      where: { action_mode: { action: row.action, mode: row.mode } },
+      create: row,
+      update: { requiresApproval: row.requiresApproval },
+    });
+  }
+
+  console.log(`Seeded owner account: ${user.email} (workspace: ${workspace.name})`);
+  console.log(`Seeded ${DEFAULT_POLICY.length} approval-policy rows.`);
 }
 
 main()
