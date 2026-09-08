@@ -1,182 +1,182 @@
 # CLAUDE.md
 
-Guidance for Claude Code (and other AI assistants) working in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What this repo is
+## Who this repo is for
 
-**Higgyd-Productions** is Derrick Higgins' "Foundation OS" — a shared
-knowledge base and project home across all of Derrick's apps, not a
-single-app repo. Derrick is a **no-code creator**: he builds and directs apps
-and automations with Claude's help, but does not write code himself and has
-no prior developer background.
-
-**This changes how you should write and explain things here, not just what
-you build:**
+**Higgyd-Productions** is Derrick Higgins' "Foundation OS." Derrick is a
+**no-code creator**: he builds and directs apps and automations with
+Claude's help, but does not write code himself and has no prior developer
+background. This changes how you should write and explain things here, not
+just what you build:
 
 - In docs, commit messages, and any explanation aimed at Derrick: use plain
   language. Define jargon on first use (e.g. "a **subagent** is a specialist
-  Claude Code persona with its own job and instructions"). Never assume prior
-  dev knowledge.
+  Claude Code persona with its own job and instructions"). Never assume
+  prior dev knowledge.
 - In code: normal engineering conventions apply (see below) — the
   plain-language rule is for docs and explanations, not for variable names.
 - Derrick's buyer profile for anything sellable is **B2B small businesses**
   — pricing and positioning guidance should default to that unless a doc
   says otherwise.
 
-## Repository structure
+## Repository shape
 
-```
-.
-├── README.md                      One-line repo description
-├── CCB-NC 4.0                     License file (content is actually CC0 1.0 — see note below)
-├── docs/
-│   └── monetization-strategy.md   Living doc: persistent memory for the ~80+ app monetization effort
-└── revenue-os/                    A self-contained multi-agent Claude Code project (see below)
-    ├── business-brief.md
-    ├── runbooks/revenue-agent-runbook.md
-    ├── .claude/agents/*.md        4 subagent definitions (the actual product)
-    └── app/                       Next.js + Prisma CRM that runs those agents
-```
+This is not a single app. It holds multiple, independent, self-contained
+projects, each with its own docs, `.claude/agents/`, and (usually) its own
+Next.js + Prisma app under `app/`. Projects do **not** share a database or
+codebase with each other, even when they share buyers or lessons. Always
+work inside one project's directory; don't assume conventions in one
+project apply to another without checking.
 
-### `docs/monetization-strategy.md` — read this first, update it last
+Current projects:
 
-This file is explicitly **persistent session memory**: conversation history
-disappears when a session ends, this file is what survives. It tracks the
-strategy for monetizing Derrick's ~80+ app portfolio (stack decisions, buyer
-profile, open decisions, a dated session log).
+- **`arthur-os/`** — Arthur Digital Works OS: a one-person, AI-operated
+  white-label digital-product studio (order-to-delivery). Start with
+  `arthur-os/CLAUDE.md` (the full mission/governance spec) before touching
+  code — it defines non-negotiable governance rules (payment/delivery/QA
+  approval gates, no agent marks its own homework, audit-log everything)
+  that the code in `arthur-os/app/` must respect.
+- **`revenue-os/`** — a four-agent lead-to-conversation Revenue OS
+  (market-signal-researcher → offer-architect → content-angle-strategist →
+  conversation-system-builder), implemented as a multi-tenant CRM. Start
+  with `revenue-os/business-brief.md` and
+  `revenue-os/runbooks/revenue-agent-runbook.md`.
+- **`first-reply/`** — FirstReply: the first pilot product sold out of
+  `revenue-os` (real estate agents buyer). A Next.js + Prisma app where an
+  agent's lead-capture link triggers an instant auto-reply email plus a
+  3-day/10-day follow-up cadence, so a slow response never loses a lead.
+  Start with `first-reply/README.md`. Its offer brief, content angles, and
+  conversation blueprint live under `revenue-os/offer-briefs/`,
+  `revenue-os/content-angles/`, and `revenue-os/conversation-blueprints/`
+  (real-estate-agents.md in each) — read those first, this app is just "how
+  to run it."
+- **`docs/monetization-strategy.md`** — a living cross-portfolio doc about
+  monetizing Derrick's ~80+ other (non-repo) apps. `revenue-os/` is the
+  engine for that work. Read it before starting monetization-strategy work,
+  and update its "Session log" before finishing such a session — that log is
+  the only memory that survives between sessions.
+- **`db/workspace_schema.sql`** — a standalone Postgres schema (contacts /
+  projects / tasks) for a generic workspace database, not tied to either app
+  above. `db/airtable-migration/` holds the export/import tooling and data
+  snapshots for migrating existing Airtable bases (Revenue OS CRM, Content
+  OPS) into Postgres — see `docs/airtable-migration-strategy.md`.
 
-- **Before doing monetization-related work:** read this file for current
-  state and open decisions.
-- **After doing monetization-related work:** append a dated entry to the
-  "Session log" section (follow the existing entries' style — what changed,
-  why, what's still open, what's next). Don't just edit prior entries away;
-  the log is a history, not a snapshot.
-- Key standing facts from this doc: ~80+ apps already built with
-  Claude/Claude Code, most already live; base44 (a no-code platform) is
-  shelved but not abandoned; payment processor is not yet decided; the
-  rollout plan is to prove a monetization template on 1–3 pilot apps before
-  stamping it across the rest — never attempt all 80+ at once.
+When a task only concerns one project, `cd` into it (or scope file
+operations to it) and rely on that project's own README/CLAUDE.md for
+specifics rather than duplicating those details here.
 
-### `revenue-os/` — the Revenue OS project
+## Both Next.js apps: common commands
 
-A multi-agent "Revenue Operating System": four Claude Code subagents that
-turn raw market signal into a working, priced, sellable sales conversation.
-Read in this order if you're new to it:
-
-1. `revenue-os/business-brief.md` — the thesis ("money is not a tool, money
-   is in systems") and why it's structured as four agents.
-2. `revenue-os/runbooks/revenue-agent-runbook.md` — the step-by-step
-   operating manual for actually running the chain.
-3. `revenue-os/app/README.md` — how to run the actual CRM application.
-
-**The four-agent chain** (`revenue-os/.claude/agents/*.md`), each a strict
-pipeline stage — never skip ahead or invent an upstream artifact:
-
-| Order | Agent | Input | Output |
-|---|---|---|---|
-| 1 | `market-signal-researcher` | a niche/audience/app idea | signal report: evidenced pain points, not opinions |
-| 2 | `offer-architect` | a signal report | offer brief: one promise, one buyer, one price, one format |
-| 3 | `content-angle-strategist` | an offer brief (+ signal report) | 3–7 content angles mapped to funnel stage |
-| 4 | `conversation-system-builder` | offer brief + angle set | conversation blueprint: branches, objections, the close |
-
-Each agent's `description:` frontmatter states what NOT to use it for (e.g.
-don't run `offer-architect` with no signal report behind it) — respect that
-when deciding which agent to invoke. The chain is a loop, not a line: real
-results from a conversation blueprint (what closed, what got objected to)
-feed back in as new signal for round two.
-
-Decisions that stay human, never automated away: whether a signal report is
-strong enough to act on, whether an offer's price is right, which angle to
-put your name behind, which conversation branches to automate vs. handle
-personally.
-
-## `revenue-os/app/` — the running application
-
-A real multi-tenant Next.js 14 (App Router) + Prisma + PostgreSQL CRM. The
-pipeline board's stages (`SIGNAL → OFFER → ANGLE → CONVERSATION → WON/LOST`)
-are literally the four-agent chain — this is not a generic CRM with agents
-bolted on afterward.
-
-### Stack
-
-- Next.js 14 (App Router), React 18, TypeScript
-- Prisma 5 + PostgreSQL
-- NextAuth (JWT sessions, credentials/email+password provider only)
-- Tailwind CSS
-- `@anthropic-ai/sdk` for the in-app "Run agent" button
-- Stripe for billing, behind a provider-agnostic interface
-
-### Setup and common commands
-
-Run everything from `revenue-os/app/`:
+`arthur-os/app/`, `revenue-os/app/`, and `first-reply/` are all Next.js 14
+(App Router) + Prisma + TypeScript + Tailwind, with an identical script
+surface. Run these from inside the relevant app directory:
 
 ```bash
-cp .env.example .env      # then fill in real values — see .env.example comments
 npm install
-npm run db:push           # sync prisma/schema.prisma to the database
-npm run dev                # http://localhost:3000
-
-npm run typecheck          # tsc --noEmit
-npm run lint                # next lint
-npm run build                # production build
-npm run db:migrate           # prisma migrate dev (use instead of db:push once schema is stable)
+npm run dev            # start dev server at localhost:3000
+npm run build           # production build
+npm run typecheck       # tsc --noEmit
+npm run lint             # next lint
+npm run db:generate      # prisma generate
+npm run db:push          # push prisma/schema.prisma to the database (no migration files)
+npm run db:migrate       # prisma migrate dev
 ```
 
-There is no test suite and no CI config in this repo yet. Before calling
-application work done, run `npm run typecheck` and `npm run build` in
-`revenue-os/app/` — the business brief records that both were last verified
-clean on 2026-07-09, and any change should keep that true.
+There is no configured test runner (no `test` script, no test files) in any
+of these apps as of this writing — don't assume Jest/Vitest exists.
+Verifying a change means: `npm run typecheck`, `npm run build`, and, for
+anything touching a live flow, actually exercising it against local Stripe
+test-mode/webhooks or a real (non-production) email send as described in
+each app's README.
 
-`.env` requires three external services to fully work (see
-`revenue-os/app/.env.example` and `revenue-os/app/README.md` for exact
-values and where to get them): a Postgres database (Supabase/Neon/etc.), an
-Anthropic API key (`ANTHROPIC_API_KEY` — powers "Run agent"; without it
-everything else still works), and a Stripe account (powers "Upgrade";
-without it everything else still works). Nothing here has real credentials
-committed — don't add any.
+`arthur-os/app` additionally has `npm run db:seed` (creates the single
+seeded Owner login from `OWNER_EMAIL`/`OWNER_PASSWORD` — this app has no
+public signup).
 
-### Conventions specific to this app — follow these, don't reinvent them
+Each app needs its own `.env` (copy from `.env.example` in that directory)
+and a Postgres database before `dev`/`build` will fully work — see each
+app's README for the exact required variables. Never put real production
+credentials in `.env.example` or commit a filled-in `.env`.
 
-- **Agents are loaded live from `.claude/agents/*.md`, never duplicated.**
-  `src/lib/agents.ts` reads the actual subagent definition files (via
-  `gray-matter` frontmatter parsing) and uses their content as the Claude
-  API system prompt. This is intentional: the CRM and the planning docs
-  must never drift apart because they're reading the same files. If you add
-  a fifth agent, add it to `revenue-os/.claude/agents/`, then register it in
-  `AGENT_FILES` and `AGENT_FOR_STAGE` in `src/lib/agents.ts` — don't
-  hardcode a prompt string in the app.
-- **Tenant isolation goes through one chokepoint.**
-  `src/lib/currentWorkspace.ts`'s `requireWorkspaceId()` is the only place
-  that resolves a workspace from the session. Every API route touching
-  `Lead`/`Task`/`AgentRun` must call it first and return 401 on `null` —
-  never trust a `workspaceId` from anywhere else (a request body, a query
+## Shared architectural pattern: `.claude/agents/` is the source of truth
+
+Both `arthur-os/` and `revenue-os/` define their specialist AI agents as
+markdown files with YAML frontmatter under `<project>/.claude/agents/*.md`
+(name, description, tools, model, then the standing task-contract prose).
+These are not just planning docs — the running app code loads them directly
+as system prompts for real Anthropic API calls, so the CRM/product and the
+agent-contract docs cannot drift apart:
+
+- `revenue-os/app/src/lib/agents.ts` reads `../.claude/agents/*.md` and
+  calls the Claude API with that file's content as the system prompt, when
+  a user clicks "Run agent" on a lead. If you add a fifth agent, add it to
+  `revenue-os/.claude/agents/`, then register it in `AGENT_FILES` and
+  `AGENT_FOR_STAGE` in `src/lib/agents.ts` — don't hardcode a prompt string
+  in the app.
+- `arthur-os/.claude/agents/*.md` define the contracts that
+  `arthur-os/app/src/lib/*` (e.g. `qualification.ts`, `production.ts`)
+  implement or will eventually call into.
+
+**When changing agent behavior, edit the relevant `.claude/agents/<name>.md`
+file, not just the app code** — for `revenue-os` especially, the app reads
+that file at runtime, so editing only TypeScript won't change what the
+Claude API call actually does. Every agent file follows the same task-
+contract shape: objective, approved inputs, allowed tools/data, prohibited
+actions, output format, acceptance criteria, confidence score, escalation
+triggers, QA reviewer/expiration — keep new or edited agents consistent
+with that structure.
+
+## Cross-project conventions worth knowing
+
+- **Tenant isolation goes through one chokepoint.** `revenue-os/app`'s
+  `src/lib/currentWorkspace.ts` (`requireWorkspaceId()`) and
+  `first-reply`'s `src/lib/currentAgent.ts` (`requireAgentId()`) are each
+  the one place that resolves the current tenant from the session. Every
+  API route touching tenant-owned data must call it first and return 401 on
+  `null` — never trust an id from anywhere else (a request body, a query
   param).
-- **Billing is provider-agnostic by design.** App code (checkout route,
-  webhook route, billing page) talks only to the `BillingProvider` interface
-  in `src/lib/billing/types.ts`, never to the Stripe SDK directly outside
-  `src/lib/billing/stripe.ts`. Adding Paddle/LemonSqueezy later means one
-  new file implementing that interface — not touching call sites. Keep this
-  boundary intact when you touch billing code.
-- **Stage change always creates a task.** `src/lib/automations.ts` is the
-  one "classic" (non-AI) automation: every pipeline stage transition
-  auto-creates a next-action `Task` via `NEXT_ACTION_BY_STAGE`, so a lead
-  never silently goes quiet. If you add a new `PipelineStage`, you must add
-  its entry here (and to `AGENT_FOR_STAGE` if an agent applies) or the
-  `Record` type will fail to compile.
-- **Schema changes:** edit `prisma/schema.prisma`, then run
-  `npm run db:push` (fast, no migration history — fine during active
-  development) or `npm run db:migrate` (generates a migration — prefer this
-  once the schema stabilizes or before shipping to real users).
-- v1 known shortcuts (see `revenue-os/app/README.md` for the full list):
-  email+password auth only (no OAuth, no password reset), one user per
-  workspace (no team invites), stage change via dropdown not drag-and-drop.
-  Don't "fix" these unprompted — they're documented trade-offs, not bugs.
-
-## General conventions across the repo
-
+- **Provider-agnostic integration points.** Apps wrap billing/email behind
+  an interface rather than calling the SDK directly everywhere:
+  `revenue-os/app/src/lib/billing/` (`types.ts` defines the interface,
+  `stripe.ts` is the concrete implementation); `arthur-os/app/src/lib/email/`
+  does the same for email (`test` provider logs to the `EmailEvent` table
+  and sends nothing; a `resend` implementation exists behind
+  `EMAIL_PROVIDER=resend`). Follow this pattern — add a new provider as a
+  new file implementing the existing interface, don't inline a second
+  payment/email SDK call site.
+- **API-first, server-side business rules.** Every consequential action
+  (payment, delivery, approval, QA sign-off) is a server-side `/api` route
+  handler with its own auth check and an audit-log write. The UI calls
+  these routes; it does not embed business logic itself. This matters most
+  in `arthur-os`, where governance rule 5/6 (approval gates, no agent
+  approves its own work) is enforced at this layer, not by convention.
+- **Idempotency on webhooks.** Stripe webhook handlers key off the Stripe
+  session/event ID so replays don't double-create Orders/Projects — follow
+  this when touching `api/stripe/webhook` or `api/billing/webhook` in any
+  app.
+- **Stage change always creates a task (revenue-os).**
+  `revenue-os/app/src/lib/automations.ts` auto-creates a next-action `Task`
+  on every pipeline stage transition via `NEXT_ACTION_BY_STAGE`, so a lead
+  never silently goes quiet. If you add a new `PipelineStage`, add its entry
+  here (and to `AGENT_FOR_STAGE` if an agent applies) or the `Record` type
+  will fail to compile.
+- **Test/sandbox mode until explicitly authorized.** Apps default to
+  Stripe test-mode keys and non-production email sending. Do not wire in
+  live payment keys or enable real outbound email unless the user
+  explicitly authorizes going to production — this is a repeated,
+  intentional constraint across these projects' docs, not an oversight to
+  "fix."
+- **v1 is a deliberately small vertical slice, not the full design.** Each
+  project's docs describe a much larger target platform than what's
+  currently built (see `arthur-os/docs/vertical-slice-plan.md` and the
+  "What's real vs. what's a v1 shortcut" sections in the `app`/project
+  READMEs). Don't build toward the full target architecture unless asked —
+  extend the existing vertical slice, and check `docs/owner-decisions-needed.md`
+  (arthur-os) before making a call the owner hasn't made yet.
 - **No CI, no automated tests currently exist anywhere in this repo.**
-  Treat `npm run typecheck` / `npm run build` (inside `revenue-os/app/`) as
-  the verification bar for app changes until a test suite exists.
+  Treat `npm run typecheck` / `npm run build` as the verification bar for
+  app changes until a test suite exists.
 - **Don't commit secrets.** `.env` is gitignored; only ever edit
   `.env.example` with placeholder/instructional values.
 - **License note:** the file `CCB-NC 4.0` at the repo root is named for
@@ -184,7 +184,6 @@ committed — don't add any.
   Universal legal code. Flag this mismatch to Derrick rather than silently
   assuming either license is authoritative if it becomes relevant to a task.
 - **Living docs vs. static docs:** `docs/monetization-strategy.md` is a
-  living doc (append to its session log, don't just overwrite). Everything
-  under `revenue-os/` (business brief, runbook, README) is closer to a
-  static spec — update it in place when it goes stale, no session-log
-  convention there.
+  living doc (append to its session log, don't just overwrite). Project
+  business briefs, runbooks, and READMEs are closer to a static spec —
+  update them in place when they go stale, no session-log convention there.
