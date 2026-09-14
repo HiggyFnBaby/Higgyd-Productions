@@ -7,16 +7,25 @@ function client() {
 }
 
 // resend.dev requires no domain verification, so this works out of the box
-// before an agent has set up their own sending domain. Swap to a verified
-// address (FROM_EMAIL env var) once one exists.
+// before you've set up a sending domain. Swap to a verified address
+// (FROM_EMAIL env var) before real leads see these — the shared test sender
+// is fine for proving the loop, but looks untrustworthy to a stranger.
 const FROM = process.env.FROM_EMAIL ?? "FirstReply <onboarding@resend.dev>";
 
-export async function sendInstantReply(leadEmail: string, leadName: string, agentName: string) {
+// Every lead-facing email sets reply-to as the agent's own address, so when
+// a lead hits "Reply" the conversation lands in the agent's inbox — not at
+// the FirstReply sender, where nobody would see it.
+export async function sendInstantReply(
+  leadEmail: string,
+  leadName: string,
+  agent: { name: string; email: string },
+) {
   await client().emails.send({
     from: FROM,
     to: leadEmail,
+    replyTo: agent.email,
     subject: `Thanks for reaching out, ${leadName}!`,
-    text: `Hi ${leadName},\n\nThanks for reaching out — this is an instant confirmation that ${agentName} received your message and will personally follow up with you shortly.\n\nTalk soon,\n${agentName}`,
+    text: `Hi ${leadName},\n\nThanks for reaching out — this is an instant confirmation that ${agent.name} received your message and will personally follow up with you shortly.\n\nTalk soon,\n${agent.name}`,
   });
 }
 
@@ -24,15 +33,19 @@ export async function sendAgentNotification(
   agentEmail: string,
   agentName: string,
   lead: { name: string; email: string; phone: string | null; message: string | null },
+  options: { autoReplySent: boolean } = { autoReplySent: true },
 ) {
   await client().emails.send({
     from: FROM,
     to: agentEmail,
+    replyTo: lead.email,
     subject: `New lead: ${lead.name}`,
     text: [
       `Hi ${agentName},`,
       "",
-      "A new lead just came in and got an instant auto-reply. Here's what they sent:",
+      options.autoReplySent
+        ? "A new lead just came in and got an instant auto-reply. Here's what they sent:"
+        : "A new lead just came in. No auto-reply was sent because your FirstReply subscription isn't active — here's what they sent so you can reply yourself:",
       "",
       `Name: ${lead.name}`,
       `Email: ${lead.email}`,
@@ -46,20 +59,30 @@ export async function sendAgentNotification(
   });
 }
 
-export async function sendFollowUpTouch2(leadEmail: string, leadName: string, agentName: string) {
+export async function sendFollowUpTouch2(
+  leadEmail: string,
+  leadName: string,
+  agent: { name: string; email: string },
+) {
   await client().emails.send({
     from: FROM,
     to: leadEmail,
+    replyTo: agent.email,
     subject: `Still here to help, ${leadName}`,
-    text: `Hi ${leadName},\n\nJust following up in case my last message got buried — ${agentName} is still happy to help whenever you're ready. No pressure, just wanted to make sure this didn't slip through the cracks.\n\n${agentName}`,
+    text: `Hi ${leadName},\n\nJust following up in case my last message got buried — ${agent.name} is still happy to help whenever you're ready. No pressure, just wanted to make sure this didn't slip through the cracks.\n\n${agent.name}`,
   });
 }
 
-export async function sendFollowUpTouch3(leadEmail: string, leadName: string, agentName: string) {
+export async function sendFollowUpTouch3(
+  leadEmail: string,
+  leadName: string,
+  agent: { name: string; email: string },
+) {
   await client().emails.send({
     from: FROM,
     to: leadEmail,
-    subject: `Last check-in from ${agentName}`,
-    text: `Hi ${leadName},\n\nNo worries if the timing isn't right — I'll leave this here in case it's useful later. Feel free to reach back out anytime.\n\n${agentName}`,
+    replyTo: agent.email,
+    subject: `Last check-in from ${agent.name}`,
+    text: `Hi ${leadName},\n\nNo worries if the timing isn't right — I'll leave this here in case it's useful later. Feel free to reach back out anytime.\n\n${agent.name}`,
   });
 }

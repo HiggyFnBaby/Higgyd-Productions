@@ -7,6 +7,8 @@ export function LeadForm({ agentId }: { agentId: string }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  // Honeypot — hidden from people, auto-filled by spam bots. See /api/leads.
+  const [website, setWebsite] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export function LeadForm({ agentId }: { agentId: string }) {
     const res = await fetch("/api/leads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agentId, name, email, phone, message }),
+      body: JSON.stringify({ agentId, name, email, phone, message, website }),
     });
 
     setSubmitting(false);
@@ -69,6 +71,16 @@ export function LeadForm({ agentId }: { agentId: string }) {
         onChange={(e) => setMessage(e.target.value)}
         rows={3}
         className="rounded border border-slate-300 px-3 py-2 text-sm"
+      />
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        className="absolute -left-[9999px] h-0 w-0 opacity-0"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button

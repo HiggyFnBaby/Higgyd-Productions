@@ -20,6 +20,20 @@ enum LeadStatus {
   LOST
 }
 
+enum SubscriptionStatus {
+  NONE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingProviderName {
+  STRIPE
+  PADDLE
+  LEMONSQUEEZY
+}
+
 model Agent {
   id           String   @id @default(cuid())
   name         String
@@ -27,6 +41,26 @@ model Agent {
   passwordHash String
   createdAt    DateTime @default(now())
   leads        Lead[]
+  subscription Subscription?
+}
+
+// Provider-agnostic billing record, one per Agent (the Agent *is* the
+// paying customer). `provider` records which payment processor this agent
+// is billed through; app code only talks to the BillingProvider interface
+// (src/lib/billing/types.ts), so a second processor can be added later
+// without changing this model. Same shape as revenue-os/app's Subscription.
+model Subscription {
+  id                     String              @id @default(cuid())
+  agent                  Agent               @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId                String              @unique
+  provider               BillingProviderName
+  providerCustomerId     String?
+  providerSubscriptionId String?
+  status                 SubscriptionStatus  @default(NONE)
+  priceId                String?
+  currentPeriodEnd       DateTime?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
 }
 
 // instantReplyAt/touch2SentAt/touch3SentAt track the follow-up cadence
