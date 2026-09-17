@@ -239,15 +239,24 @@ pilot #1.
   (the `higgyd-productions` Vercel project) has failed since Sep 8, which
   was also putting a red check on the FirstReply launch-prep PR (#11). The
   build dies at `prisma db push` with "P1000: Authentication failed" at
-  the Supabase pooler. The earlier guess (a rotated database password) was
-  wrong: the real cause is that the **"Revenue OS" Supabase project was
-  paused**. Supabase's free tier pauses a database after about a week
-  with no traffic, and a paused database rejects connections in a way
-  Prisma reports as bad credentials. Every Supabase project on the account
-  (Revenue OS, arthur-os, Foundation OS, and four unrelated ones) was in
-  that paused state — nobody had used the apps, so they went to sleep.
-  Restored the Revenue OS project from this session; the other paused
-  projects were left alone (restoring is Derrick's call per app).
+  the Supabase pooler. Two things were wrong at once:
+  1. The **"Revenue OS" Supabase project was paused.** Supabase's free
+     tier pauses a database after about a week with no traffic, and a
+     paused database rejects connections in a way Prisma reports as bad
+     credentials. Every Supabase project on the account (Revenue OS,
+     arthur-os, Foundation OS, and four unrelated ones) was paused —
+     nobody had used the apps, so they went to sleep. Restored the
+     Revenue OS project from this session (took ~4 minutes to come back);
+     the other paused projects were left alone.
+  2. **The database password stored in the `higgyd-productions` Vercel
+     project is also stale.** With the database confirmed healthy and its
+     tables intact, a fresh build still failed with the exact same P1000
+     error, so the earlier guess on PR #11 was half right. Fixing this is
+     a Vercel dashboard change (Environment Variables → `DATABASE_URL`),
+     which can't be done from a coding session — see the steps handed to
+     Derrick in the 2026-09-17 session. The `first-reply` Vercel project
+     was also red (stale Prisma Client); ported PR #11's one-line
+     `prisma generate && next build` fix onto this branch and it went green.
   Notes for next time:
   - **A paused Supabase project looks like a wrong password.** If a build
     or login fails with "Authentication failed against database server"
@@ -262,5 +271,6 @@ pilot #1.
     in its build, so it stays green even when the database is unreachable.
     Two Vercel projects for one app is the same confusion the Jul 29 notes
     warned about — worth picking one and deleting the other.
-  Next: confirm the redeploy goes green, then merge PR #11 and run its
-  test-mode launch checklist.
+  Next: Derrick updates `DATABASE_URL` on the `higgyd-productions` Vercel
+  project and redeploys `main`; once that build is green, merge PR #11 and
+  run its test-mode launch checklist.
