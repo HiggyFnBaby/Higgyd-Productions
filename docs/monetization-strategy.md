@@ -16,7 +16,7 @@ costs in money or effort — never assume prior dev knowledge.
 
 - **Build platform(s):** Claude (Claude Code / Claude-assisted builds) —
   **current focus**. base44 is shelved for now, not abandoned; revisit later.
-- **Payment processor:** not yet decided — open decision below
+- **Payment processor:** Stripe — resolved, see "Open decisions" below.
 - **This repo's role:** shared knowledge base / "Foundation OS" across all
   apps, not a single-app repo. Per-app details get their own section below as
   they're built out.
@@ -42,15 +42,20 @@ decided yet.
 
 ## Open decisions (need Derrick's input before building)
 
-- [ ] **Payment processor**: Stripe (more control, more setup, you handle tax
-      yourself) vs. Paddle/LemonSqueezy (merchant-of-record, handles sales
-      tax/VAT automatically, takes a bigger cut, much less setup for a solo
-      operator). Recommendation pending platform check: confirm what base44
-      supports natively before choosing.
+- [x] **Payment processor**: resolved in practice — Stripe. Both live apps
+      (`revenue-os/app`, and `first-reply/` via PR #11) are built on Stripe
+      behind a provider-agnostic billing interface, so switching to a
+      merchant-of-record (Paddle/LemonSqueezy) later is one new file, not a
+      rewrite. Sales tax stays Derrick's responsibility under Stripe.
 - [ ] **Pricing model per app**: subscription vs. usage-based vs. one-time vs.
       freemium-with-upsells vs. selling templates/builds to other builders.
 - [ ] **App inventory**: list of apps already built, what each does, current
       monetization status (free / paid / unreleased) — needs to be filled in.
+- [ ] **Supabase free-tier pausing**: the free tier puts a database to sleep
+      after ~7 idle days, which breaks every deploy and login until someone
+      un-pauses it (see the 2026-09-17 session log entry). Pick one: upgrade
+      the Supabase org to Pro (~$25/mo, never pauses), live with manually
+      un-pausing before demos, or add a small daily "keep-alive" job.
 
 ## App inventory
 
@@ -254,4 +259,73 @@ pilot #1.
   Stripe key, (2) SMS vs. email-only for the pilot, and (3) an unsubscribe
   line on follow-ups before volume. The general payment-processor decision
   at the top of this doc is effectively answered "Stripe" for both shipped
-  products; leaving the checkbox for Derrick to close formally.
+  products. (It was formally closed on 2026-09-22 — see that entry.)
+- **2026-09-17** — Diagnosed why every Vercel deploy of `revenue-os/app`
+  (the `higgyd-productions` Vercel project) has failed since Sep 8, which
+  was also putting a red check on the FirstReply launch-prep PR (#11). The
+  build dies at `prisma db push` with "P1000: Authentication failed" at
+  the Supabase pooler. Two things were wrong at once:
+  1. The **"Revenue OS" Supabase project was paused.** Supabase's free
+     tier pauses a database after about a week with no traffic, and a
+     paused database rejects connections in a way Prisma reports as bad
+     credentials. Every Supabase project on the account (Revenue OS,
+     arthur-os, Foundation OS, and four unrelated ones) was paused —
+     nobody had used the apps, so they went to sleep. Restored the
+     Revenue OS project from this session (took ~4 minutes to come back);
+     the other paused projects were left alone.
+  2. **The database password stored in the `higgyd-productions` Vercel
+     project is also stale.** With the database confirmed healthy and its
+     tables intact, a fresh build still failed with the exact same P1000
+     error, so the earlier guess on PR #11 was half right. Fixing this is
+     a Vercel dashboard change (Environment Variables → `DATABASE_URL`),
+     which can't be done from a coding session — see the steps handed to
+     Derrick in the 2026-09-17 session. The `first-reply` Vercel project
+     was also red (stale Prisma Client); ported PR #11's one-line
+     `prisma generate && next build` fix onto this branch and it went green.
+  Notes for next time:
+  - **A paused Supabase project looks like a wrong password.** If a build
+    or login fails with "Authentication failed against database server"
+    and nothing changed, check the Supabase dashboard for a "Paused"
+    badge before rotating anything.
+  - **This will happen again on the free tier** every ~7 idle days. The
+    options are: upgrade the Supabase org to Pro (~$25/mo, no pausing),
+    accept manually un-pausing before each demo/deploy, or add a tiny
+    scheduled job that touches the database daily. Added to the open-decisions list above.
+  - The `revenue-os` Vercel project (created Aug 25) builds the same
+    folder as `higgyd-productions` but does **not** run `prisma db push`
+    in its build, so it stays green even when the database is unreachable.
+    Two Vercel projects for one app is the same confusion the Jul 29 notes
+    warned about — worth picking one and deleting the other.
+  Next: Derrick updates `DATABASE_URL` on the `higgyd-productions` Vercel
+  project and redeploys `main`; once that build is green, merge PR #11 and
+  run its test-mode launch checklist.
+- **2026-09-22** — Housekeeping session. Closed PR #3 (a standalone browser
+  todo app from an old experiment) as out of scope — this repo holds business
+  projects with a buyer attached, and that one had none. The branch still
+  exists if it's ever wanted. Marked the **payment-processor decision
+  resolved: Stripe**, which had sat open in this doc since day one while
+  being quietly answered in practice. Resolving it doesn't make it free:
+  under Stripe, **sales tax and VAT are Derrick's to handle**, where a
+  merchant-of-record like Paddle would have done it for a bigger cut. That
+  only bites when selling into the EU at volume, so it's recorded in the
+  decision rather than reopened.
+  Two things came out of the session that weren't planned:
+  - **The `first-reply` build was broken on `main`, not just in open
+    branches.** Opening the doc PR (#13) ran CI and the FirstReply deploy
+    failed. Reproduced it locally by deleting the generated Prisma Client to
+    recreate what a fresh CI checkout starts from; `next build` doesn't
+    generate one, so type checking dies on the first Prisma type it sees.
+    Ported the same one-line `prisma generate && next build` fix #12 carries
+    and confirmed it green in CI. So PR #13 ended up carrying a code change
+    as well as the doc change.
+  - **The duplicate Vercel projects accidentally proved the DATABASE_URL
+    diagnosis.** On one identical commit, `revenue-os` deployed fine while
+    `higgyd-productions` failed. Both build `revenue-os/app`; the only
+    difference is that the failing one runs `prisma db push`. Same code, same
+    commit, and only the one that talks to the database dies. That rules out
+    the code entirely — useful the next time this looks ambiguous, and one
+    more reason to collapse the two projects into one.
+  Merged #12 and #13. Next is still blocked on the dashboard fix only Derrick
+  can make: update the stale `DATABASE_URL` on the `higgyd-productions`
+  Vercel project, which is the last red check on #11. Then merge #11 and run
+  FirstReply's live launch checklist to put it in front of one paying agent.
