@@ -19,13 +19,17 @@ Free AI Business Audit (public /audit form)
   → buyer thank-you email + owner sale-notification email
 ```
 
-Every step writes to an append-only audit log, visible on `/admin`. Payment,
-delivery, and QA/red-team sign-off are always manual owner actions — see
-`../docs/approval-policy-matrix.md` for why the Operating Mode selector
-doesn't change that yet.
+Every step writes to an append-only audit log, visible on `/admin`. Delivery
+and QA/red-team sign-off are always manual owner actions in every mode.
+Offer approval is mode-conditional: standard (catalog-default) pricing
+auto-approves in Semi-Autonomous/Autonomous mode, custom pricing always
+requires a manual click — see `../docs/approval-policy-matrix.md` for the
+full matrix and `../docs/owner-decisions-needed.md` #4 for why.
 
-It's single-owner (no multi-tenant workspaces, no public signup) — see
-`../docs/architecture.md` for why that's deliberate for v1.
+It's single-tenant in behavior (no signup, no invite flow, exactly one
+Workspace) even though the schema is already `User`/`Workspace`/`Membership`
+— see `../docs/architecture.md` and `../docs/owner-decisions-needed.md` #8
+for why that's deliberate for v1.
 
 ## Before you can run it, you need
 
@@ -64,7 +68,10 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 Then:
 1. Visit `http://localhost:3000/audit` and submit the form as a "buyer."
 2. Log in at `/login` with your seeded Owner credentials.
-3. In `/admin/leads`, open the lead, create and approve an offer.
+3. In `/admin/leads`, open the lead and create an offer. In Admin mode
+   (the default), click "Approve" on the offer page; in Semi-Autonomous or
+   Autonomous mode, a standard-priced offer auto-approves the moment it's
+   created — no separate click.
 4. Open the printed Stripe Checkout URL, pay with a Stripe test card
    (`4242 4242 4242 4242`, any future expiry/CVC).
 5. The webhook creates a Project automatically — find it in `/admin/projects`.
@@ -76,8 +83,12 @@ Then:
 
 **Real:** the whole flow above, using real (test-mode) Stripe, a real
 Postgres-backed audit trail, real signed/expiring delivery links (HMAC +
-server-side expiry check), a real deterministic production draft built from
-the lead's own submitted answers.
+server-side expiry check), and a real production draft built from the
+lead's own submitted answers — via a live Claude call (using
+`.claude/agents/production-agent.md` as the system prompt) when
+`ANTHROPIC_API_KEY` is set, falling back automatically to a deterministic
+template if it's unset or the call fails (see
+`../docs/owner-decisions-needed.md` #3).
 
 **v1 shortcuts, worth knowing about:**
 - Single Owner login only — no signup, no team members, no OAuth/Google
@@ -86,21 +97,32 @@ the lead's own submitted answers.
   and a Resend account (see `../docs/environment-and-accounts.md`).
 - Exactly one sellable package (AI Business Growth-in-a-Box) — see "First
   launch offer" in `../CLAUDE.md`.
-- The production "draft" is a deterministic template, not a live Claude
-  call — see `../docs/owner-decisions-needed.md` #3 for the documented,
-  optional upgrade path.
-- The Operating Mode selector is real and audit-logged but doesn't yet gate
-  anything differently — every payment/delivery/QA action stays manual in
-  every mode (see `../docs/approval-policy-matrix.md`).
-- No rate limiting on the public `/audit` form yet.
+- The Operating Mode selector changes exactly one thing so far: standard-priced
+  offer approval. Delivery, QA/red-team sign-off, and custom pricing stay
+  manual in every mode, by hardcoded design — see
+  `../docs/approval-policy-matrix.md`.
+- No admin UI yet for editing `ApprovalPolicy` rows — changing the default
+  policy means editing `prisma/seed.ts` and re-seeding.
+- The `/audit` rate limit (`src/lib/rateLimit.ts`) is per-IP only — it
+  doesn't defend against a distributed flood from many IPs. See
+  `../docs/threat-model.md` threat #18.
+- The data model is already `User`/`Workspace`/`Membership` (not a flat
+  Owner row), but no signup/invite route exists and no business model is
+  scoped by `workspaceId` yet — see `../docs/owner-decisions-needed.md` #8.
 
 ## Where things live
 
 - `prisma/schema.prisma` — the data model (see `../docs/data-schema.md`).
 - `src/lib/qualification.ts` — lead-hunter's scoring logic.
+- `src/lib/rateLimit.ts`, `src/app/api/leads/route.ts` — the `/audit` form's
+  rate limit and honeypot bot protection.
+- `src/lib/policy.ts`, `src/lib/offerApproval.ts`, `src/app/api/offers/route.ts` —
+  the approval-policy engine and where it's wired in (offer creation/approval).
 - `src/lib/stripe.ts`, `src/app/api/stripe/webhook/route.ts` — payment
   creation + verified, idempotent confirmation.
-- `src/lib/production.ts` — the production-agent stub.
+- `src/lib/production.ts`, `src/lib/anthropic.ts`, `src/lib/agents.ts` — the
+  production-agent draft: Claude when `ANTHROPIC_API_KEY` is set, a
+  deterministic template fallback otherwise.
 - `src/app/api/projects/[id]/{qa,redteam,deliver}/route.ts` — the
   independent review + delivery gates.
 - `src/lib/delivery.ts` — signed download token generation/verification.

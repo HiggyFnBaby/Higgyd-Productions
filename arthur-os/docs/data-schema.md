@@ -2,13 +2,16 @@
 
 ## v1 schema (implemented, `../app/prisma/schema.prisma`)
 
-Single-tenant (one Owner). Every model below exists in the actual Prisma
-schema — this doc explains the *why*, the schema is the source of truth for
-field-level detail.
+Behaviorally single-tenant (one Workspace, one User, one Membership) even
+though the schema is already the general User/Workspace/Membership shape —
+see `owner-decisions-needed.md` #8. Every model below exists in the actual
+Prisma schema — this doc explains the *why*, the schema is the source of
+truth for field-level detail.
 
 ```
-Owner 1───────────────────────────────* (none — single row in v1)
+User 1──< Membership >──1 Workspace   (exactly one of each in v1 — see below)
 Settings (singleton row: operatingMode)
+ApprovalPolicy (one row per (action, mode) — the autonomy engine's table)
 
 Lead ──< Offer ──1:1── Order ──1:1── Project ──< Artifact
                                           │
@@ -20,6 +23,17 @@ EmailEvent   (standalone log: BUYER_THANK_YOU | OWNER_SALE_NOTIFICATION)
 AuditEvent   (standalone, append-only log of every consequential action)
 ```
 
+- **User / Workspace / Membership** — the operator account, generalized to
+  the exact shape `revenue-os/app/prisma/schema.prisma` already proves out
+  (a `Membership` row is what grants a `User` access to a `Workspace`),
+  resolved by `owner-decisions-needed.md` #8. v1 behaves exactly as
+  single-tenant as before this change: `prisma/seed.ts` creates exactly one
+  `User`, one `Workspace` (fixed id `"singleton"`), and one `Membership`
+  (`role: "owner"`) — there is no signup or invite route that could create
+  a second of any of them. No other model (`Lead`, `Offer`, `Project`, etc.)
+  is scoped by `workspaceId` yet; that's the actual "small change later"
+  this generalization sets up, deliberately not built until a real second
+  operator exists.
 - **Lead** — one row per `/audit` submission. Holds the raw answers
   (`rawAnswers` JSON) plus a computed `qualificationScore` and `status`
   (`NEW | QUALIFIED | DISQUALIFIED | OFFER_APPROVED | WON | LOST`). Scoring
@@ -61,6 +75,13 @@ AuditEvent   (standalone, append-only log of every consequential action)
 - **Settings** — one singleton row holding `operatingMode`
   (`ADMIN | SEMI_AUTONOMOUS | AUTONOMOUS`), always visible on the dashboard
   per `CLAUDE.md`'s mobile-first interface requirement.
+- **ApprovalPolicy** — the approval-policy engine's `(action, mode) →
+  requiresApproval` table (see `owner-decisions-needed.md` #4 and
+  `approval-policy-matrix.md`). Seeded with defaults by `prisma/seed.ts`.
+  `src/lib/policy.ts`'s `requiresApproval()` checks a hardcoded
+  never-autonomous floor *before* reading any row here, so this table can
+  only ever grant autonomy for actions the floor allows — today, that's
+  only `APPROVE_STANDARD_OFFER`.
 
 ## Full-platform target schema (not yet built)
 
@@ -74,10 +95,13 @@ email_events, notifications, support_tickets, faqs, knowledge_entries,
 expenses, analytics_events, audit_events, incidents, backups, feature_flags`.
 
 Mapping notes for whoever builds the next slice:
-- `users`/`organizations`/`roles`/`permissions` replace the single `Owner`
-  row once multi-tenant/team access is needed — model this the way
-  `revenue-os/app/prisma/schema.prisma` does it (`User` + `Workspace` +
-  `Membership`), it's already proven in this repo.
+- `users`/`organizations` — done: v1's `User` + `Workspace` + `Membership`
+  already implement this shape (see `owner-decisions-needed.md` #8).
+  `roles`/`permissions` are not — `Membership.role` is a free-text string
+  (`"owner" | "member"`) with no actual permission differences enforced
+  anywhere yet, since only one role has ever been seeded. Real
+  role-based permission checks are still future work, for whenever a
+  second operator with a genuinely different capability set exists.
 - `lead_sources` and `consent_records` split out of v1's `Lead.source`
   string once there's more than one lead-magnet channel and real email
   consent tracking is required (needed before any real, non-test email
@@ -95,6 +119,10 @@ Mapping notes for whoever builds the next slice:
   into recurring billing and license management — see the pricing table in
   the business brief for which offers need this (monthly care plans,
   white-label licenses).
-- `approval_policies` formalizes the mode-conditional gating that v1
-  deliberately does *not* implement yet (see `approval-policy-matrix.md`'s
-  v1-vs-target split).
+- `approval_policies` — largely done: v1's `ApprovalPolicy` model already
+  implements this shape for the one action it gates today
+  (`APPROVE_STANDARD_OFFER`). Extending it to gate more actions (delivery,
+  refunds once built, etc.) means adding rows/wiring the engine into more
+  route handlers — the never-autonomous floor in `src/lib/policy.ts` would
+  need a deliberate, reviewed code change first for anything currently on
+  it (see `approval-policy-matrix.md`).

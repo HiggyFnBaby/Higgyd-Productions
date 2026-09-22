@@ -37,8 +37,10 @@ list.
   with the specific findings attached — not a blank restart.
 
 ## v1 implementation note
-The vertical slice's `src/lib/production.ts` implements a deterministic,
-non-AI version of this contract (it drafts the audit-report deliverable
-directly from the lead's submitted answers). Upgrading it to an actual
-Claude call using this file as the system prompt is a documented, optional
-next step — see `../docs/owner-decisions-needed.md`.
+The vertical slice's `src/lib/production.ts` calls Claude
+(`src/lib/anthropic.ts`) using this file as the system prompt whenever
+`ANTHROPIC_API_KEY` is configured — see `../docs/owner-decisions-needed.md`
+#3. Without a key, or if that call errors, it falls back automatically to a
+deterministic, non-AI draft (still built only from the lead's submitted
+answers, never inventing data) so a Claude hiccup never blocks project
+creation after a verified payment.

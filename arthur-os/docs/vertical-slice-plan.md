@@ -20,9 +20,11 @@ core modules is scaffolded yet.
 9. Owner notification   Test-mode (or Resend, if configured) email
 ```
 
-Every step writes to `AuditEvent`. Every payment- or delivery-adjacent step
-requires a manual owner click regardless of Operating Mode (see
-`approval-policy-matrix.md`).
+Every step writes to `AuditEvent`. Delivery, QA/red-team sign-off, and
+custom-priced offers require a manual owner click regardless of Operating
+Mode; standard-priced offer approval is mode-conditional, per the
+approval-policy engine (`owner-decisions-needed.md` #4 — see
+`approval-policy-matrix.md` for the full matrix).
 
 ## Build order
 
@@ -33,15 +35,21 @@ requires a manual owner click regardless of Operating Mode (see
    `src/lib/qualification.ts` scoring.
 4. **Offer + approval** — `/admin/leads/[id]`, `/admin/offers/[id]`,
    `POST /api/offers`, `POST /api/offers/:id/approve` (creates the Stripe
-   Checkout Session on approval).
+   Checkout Session on approval). `POST /api/offers` also checks the
+   approval-policy engine (`src/lib/policy.ts`) and, for a standard-priced
+   offer in Semi-Autonomous/Autonomous mode, runs the same approval logic
+   immediately instead of leaving it in `DRAFT` — see
+   `owner-decisions-needed.md` #4.
 5. **Payment verification** — `POST /api/stripe/webhook`, idempotent on
    `stripeSessionId`, creates `Order` + `Project` only on a verified
    `checkout.session.completed` event.
-6. **Production stub** — `src/lib/production.ts` generates a first-draft
-   deliverable `Artifact` from the Lead's audit answers (deterministic
-   template; upgradeable later to call Claude via the same pattern
-   `revenue-os/app/src/lib/anthropic.ts` uses, reading
-   `.claude/agents/production-agent.md` as the system prompt).
+6. **Production** — `src/lib/production.ts` generates a first-draft
+   deliverable `Artifact` from the Lead's audit answers. Calls Claude
+   (`src/lib/anthropic.ts`, reading `.claude/agents/production-agent.md` as
+   the system prompt, the same pattern `revenue-os/app/src/lib/anthropic.ts`
+   uses) when `ANTHROPIC_API_KEY` is configured; otherwise, or if that call
+   fails, falls back to a deterministic template so a Claude hiccup never
+   blocks project creation after a verified payment.
 7. **QA + red-team gates** — `/admin/projects/[id]`,
    `POST /api/projects/:id/qa`, `POST /api/projects/:id/redteam`. Both must
    show a passing review before the deliver action is enabled.
@@ -68,7 +76,10 @@ submission to delivery.
 Multi-tenant workspaces, OAuth/Google login, real Gmail OAuth send,
 subscriptions/licenses, FAQ/knowledge engine, analytics dashboard, support
 tickets, offline draft sync, mobile bottom-nav/PWA chrome, six color themes,
-mode-conditional autonomy, rate limiting on the public form, CI security
-scanning. Each is tracked either in `owner-decisions-needed.md` (needs a
-decision first) or is simply "next slice" (no open decision, just not built
+mode-conditional autonomy beyond standard-priced offer approval (delivery,
+refunds, publishing, mass outreach all stay on the never-autonomous floor —
+see `approval-policy-matrix.md`), rate limiting on the public form, CI
+security scanning. Each is tracked either in `owner-decisions-needed.md`
+(needs a decision first) or is simply "next slice" (no open decision, just
+not built
 yet).

@@ -1,6 +1,8 @@
 // Arthur Digital Works OS — v1 vertical-slice data model.
 // See ../../docs/data-schema.md for the full explanation of every model.
-// Single-tenant (one Owner) by design — see ../../docs/architecture.md.
+// User/Workspace/Membership shape, single-tenant behavior by design (one
+// Workspace, seeded once, no signup/invite route) — see
+// ../../docs/architecture.md and ../../docs/owner-decisions-needed.md #8.
 
 generator client {
   provider = "prisma-client-js"
@@ -75,15 +77,58 @@ enum EmailStatus {
   FAILED
 }
 
-// The single operator account. v1 is intentionally single-tenant — see
-// ../../docs/data-schema.md's "full-platform target schema" for how this
-// generalizes to real multi-user access later.
-model Owner {
-  id           String   @id @default(cuid())
-  email        String   @unique
+// The mode-conditional approval-policy engine's action vocabulary — see
+// ../../docs/approval-policy-matrix.md and
+// ../../docs/owner-decisions-needed.md #4. DELIVER_PROJECT, ISSUE_REFUND,
+// PUBLISH_PUBLIC_CONTENT, and APPROVE_CUSTOM_OFFER are on the hardcoded
+// "never autonomous" floor in src/lib/policy.ts — no ApprovalPolicy row can
+// make those autonomous, regardless of what's stored here.
+enum ApprovalAction {
+  APPROVE_STANDARD_OFFER
+  APPROVE_CUSTOM_OFFER
+  DELIVER_PROJECT
+  ISSUE_REFUND
+  PUBLISH_PUBLIC_CONTENT
+  SEND_MASS_OUTREACH
+}
+
+// The operator account. Generalized to User + Workspace + Membership per
+// owner-decisions-needed.md #8, matching the exact pattern
+// ../../../revenue-os/app/prisma/schema.prisma already proves out — so a
+// real second operator later is a small change (a second Membership row),
+// not a schema migration. Behaviorally, v1 is still single-tenant: there is
+// exactly one Workspace (seeded by prisma/seed.ts) and no signup/invite
+// route exists to create a second User or Membership — see
+// ../../docs/data-schema.md for what "small change later" actually means.
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
   name         String?
   passwordHash String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+}
+
+model Workspace {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+}
+
+// A Membership is what grants a User access to a Workspace — the same
+// shape revenue-os/app uses. "owner" is the only role seeded/used in v1;
+// "member" exists in the type for when a real second operator is added.
+model Membership {
+  id          String    @id @default(cuid())
+  role        String    @default("owner") // "owner" | "member"
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, workspaceId])
 }
 
 // Singleton settings row. Always exactly one row in v1.
@@ -91,6 +136,39 @@ model Settings {
   id            String        @id @default("singleton")
   operatingMode OperatingMode @default(ADMIN)
   updatedAt     DateTime      @updatedAt
+}
+
+// One row per (action, mode) pair — the "requires a manual owner click?"
+// table src/lib/policy.ts's requiresApproval() reads. Seeded with defaults
+// by prisma/seed.ts to match ../../docs/approval-policy-matrix.md's target
+// matrix. Editable later from the Command Center without a code change;
+// no UI for that exists yet in v1 (see owner-decisions-needed.md #4).
+model ApprovalPolicy {
+  id               String         @id @default(cuid())
+  action           ApprovalAction
+  mode             OperatingMode
+  requiresApproval Boolean        @default(true)
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([action, mode])
+}
+
+// Fixed-window rate-limit counter for public endpoints (currently just
+// POST /api/leads — the /audit form). `key` is scoped per-endpoint and
+// per-IP (e.g. "audit:203.0.113.4"); `windowStart` is the window's start
+// timestamp, so a new row is created each window instead of updating one
+// row forever. See ../../docs/threat-model.md and
+// ../../docs/owner-decisions-needed.md #7. DB-backed (not in-memory) so it
+// works correctly across multiple serverless function instances — see
+// src/lib/rateLimit.ts. Rows are never deleted in v1 (acceptable at this
+// traffic volume); a cleanup job is future work if that changes.
+model RateLimitBucket {
+  id          String   @id @default(cuid())
+  key         String
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@unique([key, windowStart])
 }
 
 // One row per /audit submission. See ../.claude/agents/lead-hunter.md for

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { scoreLead } from "@/lib/qualification";
 import { logAuditEvent } from "@/lib/audit";
+import { checkRateLimit, getClientIp, AUDIT_FORM_RATE_LIMIT } from "@/lib/rateLimit";
 
 const MAX_TEXT_LENGTH = 4000;
 
@@ -11,9 +12,17 @@ const MAX_TEXT_LENGTH = 4000;
 // agent contract — see ../../../../.claude/agents/lead-hunter.md and
 // ../../../../docs/acceptance-criteria.md. Nothing here creates an Offer or
 // contacts anyone — that's always a separate, owner-initiated action.
+//
+// Bot protection, per ../../../../docs/owner-decisions-needed.md #7:
+// - Honeypot field (`website`): real users never see or fill it (hidden in
+//   AuditForm.tsx); a bot that fills every field it finds does. A hit
+//   returns the same success response as a real submission — no Lead row
+//   gets created, and the bot gets no signal it was caught.
+// - IP rate limit: generous (AUDIT_FORM_RATE_LIMIT), blocks floods without
+//   punishing a hesitant real buyer who resubmits a couple of times.
 export async function POST(request: Request) {
   const body = await request.json();
-  const { name, email, company, businessType, painPoint, monthlyRevenueRange, urgency } = body as {
+  const { name, email, company, businessType, painPoint, monthlyRevenueRange, urgency, website } = body as {
     name?: string;
     email?: string;
     company?: string;
@@ -21,7 +30,24 @@ export async function POST(request: Request) {
     painPoint?: string;
     monthlyRevenueRange?: string;
     urgency?: string;
+    website?: string; // honeypot — must stay empty
   };
+
+  if (website) {
+    return NextResponse.json({ id: "ok" }, { status: 201 });
+  }
+
+  const ip = getClientIp(request);
+  const rateLimit = await checkRateLimit(`audit:${ip}`, AUDIT_FORM_RATE_LIMIT);
+  if (!rateLimit.allowed) {
+    await logAuditEvent({
+      actor: "Rate Limiter (auto)",
+      action: "RATE_LIMIT_BLOCKED",
+      entityType: "Lead",
+      metadata: { endpoint: "POST /api/leads", ip, count: rateLimit.count, limit: rateLimit.limit },
+    });
+    return NextResponse.json({ error: "Too many submissions — please try again later." }, { status: 429 });
+  }
 
   if (!name || !email || !painPoint) {
     return NextResponse.json({ error: "name, email, and painPoint are required" }, { status: 400 });

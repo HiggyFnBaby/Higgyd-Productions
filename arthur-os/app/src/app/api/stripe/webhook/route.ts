@@ -4,7 +4,7 @@ import { OfferStatus, OrderStatus, ProjectStatus, LeadStatus } from "@prisma/cli
 import { prisma } from "@/lib/prisma";
 import { verifyStripeWebhookEvent } from "@/lib/stripe";
 import { logAuditEvent } from "@/lib/audit";
-import { draftAuditReport } from "@/lib/production";
+import { generateProductionDraft } from "@/lib/production";
 import { OFFER_CATALOG } from "@/lib/offers";
 
 // Project creation only ever happens here, only after signature
@@ -67,8 +67,14 @@ export async function POST(request: Request) {
 
   // Production Agent's first automatic pass — a read-only-input,
   // no-external-effect action, so it's safe to run without a separate
-  // owner click, unlike the QA/red-team/delivery gates that follow.
-  const draft = draftAuditReport(offer.lead);
+  // owner click, unlike the QA/red-team/delivery gates that follow. Calls
+  // Claude when ANTHROPIC_API_KEY is configured, else falls back to the
+  // deterministic template — see ../../../../../docs/owner-decisions-needed.md
+  // #3. This does mean the webhook response is a little slower when the
+  // Claude path runs (a few seconds for a short markdown report); acceptable
+  // for v1's order volume, worth revisiting (e.g. moving generation off the
+  // webhook's critical path) if that ever becomes a real bottleneck.
+  const draft = await generateProductionDraft(offer.lead);
 
   const project = await prisma.project.create({
     data: {
@@ -77,17 +83,26 @@ export async function POST(request: Request) {
       name: `${catalogEntry.name} — ${offer.lead.name}`,
       status: ProjectStatus.PRODUCTION,
       artifacts: {
-        create: { name: "Audit Report (draft)", content: draft, version: 1 },
+        create: {
+          name: `Audit Report (draft — ${draft.source === "claude" ? "Claude" : "template"})`,
+          content: draft.content,
+          version: 1,
+        },
       },
     },
   });
 
   await logAuditEvent({
-    actor: "Stripe webhook",
+    actor: draft.source === "claude" ? "Production Agent (Claude)" : "Production Agent (template)",
     action: "VERIFY_PAYMENT_AND_CREATE_PROJECT",
     entityType: "Order",
     entityId: order.id,
-    metadata: { offerId: offer.id, projectId: project.id, amountCents: order.amountCents },
+    metadata: {
+      offerId: offer.id,
+      projectId: project.id,
+      amountCents: order.amountCents,
+      draftSource: draft.source,
+    },
   });
 
   return NextResponse.json({ received: true, orderId: order.id, projectId: project.id });

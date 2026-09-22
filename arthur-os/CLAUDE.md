@@ -64,12 +64,16 @@ Autonomous Mode:
 - Escalate anything outside those boundaries.
 
 v1 note: the vertical slice scaffolded in `arthur-os/app` implements the
-mode toggle as a real, persisted, audit-logged setting that is always visible
-on the dashboard, but does **not** yet let any mode skip a human click on
-payment, delivery, or QA/red-team sign-off — every one of those stays a
-manual owner action in every mode, per governance rule 5. Mode-conditional
-autonomy for those actions is future work, tracked in
-`docs/owner-decisions-needed.md`.
+mode toggle as a real, persisted, audit-logged setting that is always
+visible on the dashboard, and — as of the mode-conditional approval-policy
+engine (`docs/owner-decisions-needed.md` #4) — actually changes one
+action's behavior: Semi-Autonomous and Autonomous mode auto-approve
+**standard-priced** offers (generating the Stripe checkout session without
+a manual click). Custom pricing, delivery, and QA/red-team sign-off stay
+manual owner actions in every mode, per governance rule 5 — see
+`docs/approval-policy-matrix.md` for the full, current matrix and the
+hardcoded floor that keeps those actions manual regardless of any future
+policy change.
 
 CORE MODULES (full platform — not all built in v1)
 1. Arthur Command Center
