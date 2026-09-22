@@ -235,6 +235,31 @@ pilot #1.
   agents (billing wiring, live email sending) or continue treating it as a
   proven-in-test v1; revisit the still-open payment-processor decision
   before either.
+- **2026-09-14** — Derrick chose to launch FirstReply as a paid pilot
+  (option "a": launch prep in test mode) over shelving it or going back to
+  the portfolio shortlist, and picked **Stripe** for it since Stripe is
+  already proven live in Revenue OS. Built the launch prep in
+  `first-reply/`: billing behind the same provider-agnostic
+  `BillingProvider` interface as `revenue-os/app` (Stripe checkout +
+  webhook, a `Subscription` record per agent, a Billing page and nav link,
+  priced at $129/month per the offer brief); hardened the lead path for
+  real traffic (lead saved before any email is attempted, email failures
+  logged instead of crashing the request, reply-to on every lead email set
+  to the agent so replies land in the agent's inbox, a honeypot field
+  against spam bots, follow-up cron survives one bad send); and an
+  explicit `BILLING_REQUIRED` switch, default off, that when on stops the
+  automatic replies/follow-ups for unpaid agents but never stops saving
+  the lead or notifying the agent. Verified: `prisma generate`,
+  `tsc --noEmit`, and `next build` all pass. Nothing is wired to live
+  keys — `first-reply/README.md` now has a 5-step "Launch checklist (test
+  mode)" covering Vercel deploy, Resend domain verification, Stripe test
+  setup, an end-to-end proof on the live URL, and flipping the gate.
+  Next: Derrick walks that checklist (all dashboard/forms work, no code);
+  then the still-open decisions are (1) whether to go live with a real
+  Stripe key, (2) SMS vs. email-only for the pilot, and (3) an unsubscribe
+  line on follow-ups before volume. The general payment-processor decision
+  at the top of this doc is effectively answered "Stripe" for both shipped
+  products. (It was formally closed on 2026-09-22 — see that entry.)
 - **2026-09-17** — Diagnosed why every Vercel deploy of `revenue-os/app`
   (the `higgyd-productions` Vercel project) has failed since Sep 8, which
   was also putting a red check on the FirstReply launch-prep PR (#11). The
