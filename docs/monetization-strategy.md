@@ -42,15 +42,20 @@ decided yet.
 
 ## Open decisions (need Derrick's input before building)
 
-- [ ] **Payment processor**: Stripe (more control, more setup, you handle tax
-      yourself) vs. Paddle/LemonSqueezy (merchant-of-record, handles sales
-      tax/VAT automatically, takes a bigger cut, much less setup for a solo
-      operator). Recommendation pending platform check: confirm what base44
-      supports natively before choosing.
+- [x] **Payment processor**: resolved in practice — Stripe. Both live apps
+      (`revenue-os/app`, and `first-reply/` via PR #11) are built on Stripe
+      behind a provider-agnostic billing interface, so switching to a
+      merchant-of-record (Paddle/LemonSqueezy) later is one new file, not a
+      rewrite. Sales tax stays Derrick's responsibility under Stripe.
 - [ ] **Pricing model per app**: subscription vs. usage-based vs. one-time vs.
       freemium-with-upsells vs. selling templates/builds to other builders.
 - [ ] **App inventory**: list of apps already built, what each does, current
       monetization status (free / paid / unreleased) — needs to be filled in.
+- [ ] **Supabase free-tier pausing**: the free tier puts a database to sleep
+      after ~7 idle days, which breaks every deploy and login until someone
+      un-pauses it (see the 2026-09-17 session log entry). Pick one: upgrade
+      the Supabase org to Pro (~$25/mo, never pauses), live with manually
+      un-pausing before demos, or add a small daily "keep-alive" job.
 
 ## App inventory
 
@@ -230,3 +235,42 @@ pilot #1.
   agents (billing wiring, live email sending) or continue treating it as a
   proven-in-test v1; revisit the still-open payment-processor decision
   before either.
+- **2026-09-17** — Diagnosed why every Vercel deploy of `revenue-os/app`
+  (the `higgyd-productions` Vercel project) has failed since Sep 8, which
+  was also putting a red check on the FirstReply launch-prep PR (#11). The
+  build dies at `prisma db push` with "P1000: Authentication failed" at
+  the Supabase pooler. Two things were wrong at once:
+  1. The **"Revenue OS" Supabase project was paused.** Supabase's free
+     tier pauses a database after about a week with no traffic, and a
+     paused database rejects connections in a way Prisma reports as bad
+     credentials. Every Supabase project on the account (Revenue OS,
+     arthur-os, Foundation OS, and four unrelated ones) was paused —
+     nobody had used the apps, so they went to sleep. Restored the
+     Revenue OS project from this session (took ~4 minutes to come back);
+     the other paused projects were left alone.
+  2. **The database password stored in the `higgyd-productions` Vercel
+     project is also stale.** With the database confirmed healthy and its
+     tables intact, a fresh build still failed with the exact same P1000
+     error, so the earlier guess on PR #11 was half right. Fixing this is
+     a Vercel dashboard change (Environment Variables → `DATABASE_URL`),
+     which can't be done from a coding session — see the steps handed to
+     Derrick in the 2026-09-17 session. The `first-reply` Vercel project
+     was also red (stale Prisma Client); ported PR #11's one-line
+     `prisma generate && next build` fix onto this branch and it went green.
+  Notes for next time:
+  - **A paused Supabase project looks like a wrong password.** If a build
+    or login fails with "Authentication failed against database server"
+    and nothing changed, check the Supabase dashboard for a "Paused"
+    badge before rotating anything.
+  - **This will happen again on the free tier** every ~7 idle days. The
+    options are: upgrade the Supabase org to Pro (~$25/mo, no pausing),
+    accept manually un-pausing before each demo/deploy, or add a tiny
+    scheduled job that touches the database daily. Added to the open-decisions list above.
+  - The `revenue-os` Vercel project (created Aug 25) builds the same
+    folder as `higgyd-productions` but does **not** run `prisma db push`
+    in its build, so it stays green even when the database is unreachable.
+    Two Vercel projects for one app is the same confusion the Jul 29 notes
+    warned about — worth picking one and deleting the other.
+  Next: Derrick updates `DATABASE_URL` on the `higgyd-productions` Vercel
+  project and redeploys `main`; once that build is green, merge PR #11 and
+  run its test-mode launch checklist.
