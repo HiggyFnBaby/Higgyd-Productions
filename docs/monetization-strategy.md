@@ -16,7 +16,7 @@ costs in money or effort — never assume prior dev knowledge.
 
 - **Build platform(s):** Claude (Claude Code / Claude-assisted builds) —
   **current focus**. base44 is shelved for now, not abandoned; revisit later.
-- **Payment processor:** not yet decided — open decision below
+- **Payment processor:** Stripe — resolved, see "Open decisions" below.
 - **This repo's role:** shared knowledge base / "Foundation OS" across all
   apps, not a single-app repo. Per-app details get their own section below as
   they're built out.
@@ -42,11 +42,11 @@ decided yet.
 
 ## Open decisions (need Derrick's input before building)
 
-- [ ] **Payment processor**: Stripe (more control, more setup, you handle tax
-      yourself) vs. Paddle/LemonSqueezy (merchant-of-record, handles sales
-      tax/VAT automatically, takes a bigger cut, much less setup for a solo
-      operator). Recommendation pending platform check: confirm what base44
-      supports natively before choosing.
+- [x] **Payment processor**: resolved in practice — Stripe. Both live apps
+      (`revenue-os/app`, and `first-reply/` via PR #11) are built on Stripe
+      behind a provider-agnostic billing interface, so switching to a
+      merchant-of-record (Paddle/LemonSqueezy) later is one new file, not a
+      rewrite. Sales tax stays Derrick's responsibility under Stripe.
 - [ ] **Pricing model per app**: subscription vs. usage-based vs. one-time vs.
       freemium-with-upsells vs. selling templates/builds to other builders.
 - [ ] **App inventory**: list of apps already built, what each does, current
@@ -230,3 +230,20 @@ pilot #1.
   agents (billing wiring, live email sending) or continue treating it as a
   proven-in-test v1; revisit the still-open payment-processor decision
   before either.
+- **2026-09-22** — Housekeeping, no code touched. Closed PR #3 (a standalone
+  browser todo app from an old experiment) as out of scope — this repo holds
+  business projects with a buyer attached, and that one had none. The branch
+  still exists if it's ever wanted. Also marked the **payment-processor
+  decision resolved: Stripe**, which had sat open in this doc since day one
+  while being quietly answered in practice. Two notes on that. First, the
+  wording in "Open decisions" is deliberately copied word-for-word from PR
+  #12, which resolves the same item, so whichever of the two merges first the
+  other applies cleanly instead of conflicting. Second, resolving it doesn't
+  make it free: under Stripe, **sales tax and VAT are Derrick's to handle**,
+  where a merchant-of-record like Paddle would have done it for a bigger cut.
+  That only bites when selling into the EU at volume, so it's recorded rather
+  than reopened. Next is unchanged and still blocked on a dashboard fix only
+  Derrick can make: update the stale `DATABASE_URL` on the
+  `higgyd-productions` Vercel project, which is the single red check holding
+  up both FirstReply PRs. Then merge #12, then #11, then run FirstReply's
+  live launch checklist and put it in front of one paying agent.
