@@ -39,7 +39,13 @@ export async function GET(request: Request) {
     // Surfacing this as a failed run is the point: a red cron in the Vercel
     // dashboard is the early warning that the database is already unreachable,
     // instead of finding out later via a failed deploy.
-    console.error("keep-alive: database unreachable", error);
+    // Never log the error itself: some Prisma initialization errors (P1013 on a
+    // malformed URL, for one) echo the connection string -- password included --
+    // in their message, and that would land in Vercel's logs. Code and class are
+    // enough to tell "paused/rejected" from "bad URL".
+    const code = (error as { code?: string } | null)?.code;
+    const kind = error instanceof Error ? error.constructor.name : typeof error;
+    console.error(`keep-alive: database unreachable (${kind}${code ? ` ${code}` : ""})`);
     return NextResponse.json({ ok: false, error: "Database unreachable" }, { status: 500 });
   }
 

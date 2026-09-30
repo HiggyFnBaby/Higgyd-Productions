@@ -15,9 +15,13 @@ import { prisma } from "@/lib/prisma";
 // runtime — login and every dashboard page fail — with no red check anywhere to
 // warn you. That makes the keep-alive more valuable here, not less.
 //
-// Deliberately NOT audit-logged. src/lib/audit.ts is for "every route handler
-// that changes state"; this one changes nothing, and a daily row would bury
-// real events in the append-only log that governance rule 7 depends on.
+// Deliberately NOT audit-logged, against governance rule 7's "failures":
+//   - src/lib/audit.ts is for "every route handler that changes state". This one
+//     changes nothing, and a daily success row would bury real events in the
+//     append-only log that rule 7 exists to keep readable.
+//   - The failure case cannot be audited even in principle: logAuditEvent writes
+//     to the database, which is precisely what is unreachable. A red cron run in
+//     Vercel plus the log line below is the only signal available.
 //
 // The query is deliberately `SELECT 1`. It depends on no table, writes nothing,
 // and still counts as real database activity.
@@ -44,7 +48,13 @@ export async function GET(request: Request) {
   } catch (error) {
     // Since a paused database is otherwise invisible in this app (the build
     // stays green), a red cron run here is the only early warning there is.
-    console.error("keep-alive: database unreachable", error);
+    // Never log the error itself: some Prisma initialization errors (P1013 on a
+    // malformed URL, for one) echo the connection string -- password included --
+    // in their message, and that would land in Vercel's logs. Code and class are
+    // enough to tell "paused/rejected" from "bad URL".
+    const code = (error as { code?: string } | null)?.code;
+    const kind = error instanceof Error ? error.constructor.name : typeof error;
+    console.error(`keep-alive: database unreachable (${kind}${code ? ` ${code}` : ""})`);
     return NextResponse.json({ ok: false, error: "Database unreachable" }, { status: 500 });
   }
 
