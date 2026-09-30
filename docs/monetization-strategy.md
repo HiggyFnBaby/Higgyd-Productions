@@ -62,9 +62,12 @@ decided yet.
       gets two harmless pings a day until one project is retired). Covers
       **both deployed apps**: `revenue-os/app` at 07:00 UTC and
       `arthur-os/app` at 09:00 UTC. `first-reply` needs nothing — its existing
-      follow-ups cron already queries the database daily. Still outstanding:
-      `arthur-os`'s Supabase project is paused right now and must be restored
-      by hand once, since a keep-alive cannot wake a sleeping database.
+      follow-ups cron already queries the database daily. Both apps' Supabase
+      projects were restored by hand on 2026-09-30 (a keep-alive prevents a
+      pause but cannot undo one), so the job now has something to hold up.
+      Still outstanding: `CRON_SECRET` on the `higgyd-productions`,
+      `revenue-os` and `arthur-os` Vercel projects — until it is set the job
+      fires daily and deliberately refuses to touch the database.
 
 ## App inventory
 
@@ -386,3 +389,52 @@ pilot #1.
   checklist — it is merged, deployed and green,
   and still has never been put in front of a paying agent, which remains the
   actual revenue step.
+- **2026-09-30 (cont.)** — Derrick restored `arthur-os`'s Supabase project by
+  hand, which was the last blocker on the keep-alive work. Verified it properly
+  rather than trusting the status field: the project reads `ACTIVE_HEALTHY` and
+  the exact `SELECT 1` the keep-alive runs returns. Both deployed apps' databases
+  are now awake, and PR #14 (the keep-alive for both apps) merged with all five
+  Vercel checks green, including production deploys of the merge commit.
+  Two problems surfaced while inspecting that database, neither of them caused by
+  the pause:
+  - **`arthur-os` had never been seeded.** All 16 tables existed, so `db push`
+    had run, but every table had zero rows — including `User`, which is the only
+    login this app has (no public signup, by design). The app deploys green and
+    then rejects you at `/login`. A restored Supabase project keeps its data, so
+    this was never a pause symptom: `npm run db:seed` had simply never been run
+    against production. Fixed by adding `/api/setup/seed`, a one-time endpoint
+    that runs the same upserts as `prisma/seed.ts` using `OWNER_EMAIL` /
+    `OWNER_PASSWORD` from the project's own environment variables. **The point of
+    it is that no credential passes through a conversation** — the reason the
+    Supabase password and Anthropic key both needed rotating earlier. It is
+    gated by `SETUP_SECRET`, fails closed (503) when that is unset, which is
+    also how it is retired, and is audit-logged because unlike the keep-alive it
+    genuinely changes state. Auth failures are logged to the console only —
+    audit-logging them would hand an anonymous caller an unbounded INSERT into
+    the append-only log.
+  - **Row-level security was off on all 16 tables.** Supabase publishes a REST
+    API over `public` to the anon key; this app never uses supabase-js, so that
+    API was pure exposure — anyone with the key could rewrite any table,
+    `AuditEvent` included. Enabled RLS with no policies on all 16 (recorded in
+    `arthur-os/app/prisma/rls.sql`, since `prisma db push` does not manage RLS
+    and will not restore it). Safe because Prisma connects as `postgres`, which
+    has `rolbypassrls = true`. Verified both directions: as `postgres` a probe
+    row was visible and writable, as `anon` it was invisible and an insert was
+    rejected. The linter now reports `rls_enabled_no_policy` (INFO) — that is the
+    intended deny-all end state, not a to-do.
+
+  Notes for next time:
+  - **"Deploys green" is not "works."** `arthur-os` built and deployed fine for
+    weeks with an empty database and no owner account. Its build never touches
+    the database, so nothing was ever red. For this app, check that `User` has a
+    row before believing a green deploy.
+  - **Enabling RLS with no policies is the right move for a Prisma-only app,**
+    and is the opposite of the generic advice. The usual warning ("RLS with no
+    policies blocks all access") assumes supabase-js and the anon key. When the
+    only caller is Prisma as a `rolbypassrls` role, deny-all costs nothing and
+    closes the whole REST surface.
+  Next: `CRON_SECRET` on three Vercel projects, and Derrick running the seed
+  endpoint. Then FirstReply's live launch checklist — merged, deployed, green,
+  and still never put in front of a paying agent, which remains the actual
+  revenue step. The two duplicate Vercel projects both building `revenue-os/app`
+  are still worth collapsing.

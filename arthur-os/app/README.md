@@ -147,6 +147,63 @@ One caveat: **a keep-alive prevents a pause but cannot undo one.** If this
 project's database is already paused — it was as of 2026-09-30 — restore it in
 the Supabase dashboard first, then the job keeps it up from there.
 
+## Creating your Owner login on a deployed instance
+
+This app has no public signup — there is exactly one Owner login, and normally
+it's created by `npm run db:seed`. That needs a terminal with the production
+`DATABASE_URL` and your chosen password in its environment. On Vercel you don't
+have one, so there's a second route to the same result: `/api/setup/seed`.
+
+It runs the identical upserts the seed script does, reading the email and
+password from the project's own environment variables. Nothing secret has to be
+typed into a chat, a ticket, or a commit.
+
+1. Generate a one-time token: `openssl rand -base64 32`
+2. In the `arthur-os` Vercel project, Settings → Environment Variables, add three
+   values for Production:
+   - `SETUP_SECRET` — the token from step 1
+   - `OWNER_EMAIL` — the address you'll log in with
+   - `OWNER_PASSWORD` — the password you'll log in with (pick it here; don't
+     reuse one, and don't send it to anyone)
+3. Redeploy, so the new variables are live.
+4. Visit `https://<your-arthur-os-domain>/api/setup/seed?secret=<the token>`.
+   A `{"ok":true,...}` response means the Owner account, the Workspace, your
+   `owner` Membership, the Settings row and the approval-policy rows all exist.
+5. Log in at `/login`.
+6. **Delete `SETUP_SECRET`** from the Vercel project. This is the step that
+   retires the endpoint: with it unset the route returns `503` and touches
+   nothing. Leave `OWNER_EMAIL` and `OWNER_PASSWORD` in place — the app itself
+   doesn't read them after seeding, but you'll want them if you ever re-seed.
+
+Re-running it is safe — everything upserts, and running it again with a changed
+`OWNER_PASSWORD` is in fact how you reset your own password. What it never does
+is log or return the password or its hash.
+
+Two honest caveats. The token travels in the URL in step 4, so it lands in
+Vercel's request log and your browser history — which is exactly why step 6
+isn't optional. And a `503 Not configured` in step 4 means step 2 didn't save,
+not that the route is broken.
+
+## Database security: row-level security
+
+Supabase publishes a REST API over your database's `public` schema, reachable
+with the project's anon key. This app never uses it — it talks to Postgres
+through Prisma — so that API was pure exposure: with row-level security off,
+anyone holding that key could read or rewrite every table, the append-only
+`AuditEvent` log included.
+
+Row-level security is now enabled on all 16 tables, with **no policies**, which
+denies that REST API everything. The app is unaffected, because Prisma connects
+as the `postgres` role and that role bypasses RLS outright.
+
+`prisma/rls.sql` is the record of the change. Re-apply it if you ever rebuild
+the database from scratch, because `prisma db push` doesn't manage RLS and won't
+restore it for you.
+
+Supabase's linter will report `rls_enabled_no_policy` (INFO) for those tables
+from now on. That's the intended end state, not a to-do — deny-all is the goal.
+Don't clear the warning by adding permissive policies.
+
 ## Where things live
 
 - `prisma/schema.prisma` — the data model (see `../docs/data-schema.md`).
