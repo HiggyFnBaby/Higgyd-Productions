@@ -110,6 +110,43 @@ template if it's unset or the call fails (see
   Owner row), but no signup/invite route exists and no business model is
   scoped by `workspaceId` yet — see `../docs/owner-decisions-needed.md` #8.
 
+## Keeping the database awake (daily keep-alive)
+
+Supabase's free tier **pauses a project after about a week with no database
+activity**. This app's Supabase project has been paused before, and the way it
+breaks here is sneaky: the build is `prisma generate && next build`, which never
+connects to the database, so a paused project still **builds and deploys green**.
+Nothing turns red. You find out when you try to log in and everything fails.
+
+To stop that, `vercel.json` registers one Vercel Cron job that calls
+`/api/cron/keep-alive` once a day. That endpoint runs a single `SELECT 1`. It
+touches no table and writes nothing; it exists only so the database sees
+traffic. Running daily against a ~7-day pause window leaves about six days of
+slack, so one missed run is harmless.
+
+It is deliberately **not** audit-logged. `src/lib/audit.ts` is for every route
+handler that *changes state*; this one changes nothing, and a daily row would
+bury real events in the append-only log that governance rule 7 relies on.
+
+**This only works if `CRON_SECRET` is set on the Vercel project.** Vercel sends
+that value as a `Bearer` token, and without it the endpoint refuses to run
+rather than sit on the internet unauthenticated. If it is missing, the cron will
+appear to run while doing nothing.
+
+Setup:
+
+1. Generate a secret: `openssl rand -base64 32`
+2. Add it as `CRON_SECRET` in the `arthur-os` Vercel project (Settings →
+   Environment Variables), for Production.
+3. Redeploy so the cron is registered.
+4. Confirm it took: the project's **Cron Jobs** tab should list
+   `/api/cron/keep-alive`, and after the first run its log should show
+   `{"ok":true,...}`. A `503 Not configured` there means step 2 did not save.
+
+One caveat: **a keep-alive prevents a pause but cannot undo one.** If this
+project's database is already paused — it was as of 2026-09-30 — restore it in
+the Supabase dashboard first, then the job keeps it up from there.
+
 ## Where things live
 
 - `prisma/schema.prisma` — the data model (see `../docs/data-schema.md`).

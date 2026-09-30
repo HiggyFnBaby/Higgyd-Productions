@@ -57,11 +57,14 @@ decided yet.
       `/api/cron/keep-alive`, which runs one `SELECT 1` a day so the database
       never sits idle for the ~7 days that trigger a pause. Requires
       `CRON_SECRET` on the Vercel project or it refuses to run. See
-      `revenue-os/app/README.md` for setup and the two caveats (it prevents a
-      pause but cannot undo one, and the duplicate Vercel project means two
-      pings a day until one is retired). **Only `revenue-os/app` is covered so
-      far** — `arthur-os` has its own Supabase project, currently paused, and
-      would need the same treatment before it matters.
+      each app's README for setup and the caveats (it prevents a pause but
+      cannot undo one, and the duplicate Vercel project means `revenue-os/app`
+      gets two harmless pings a day until one project is retired). Covers
+      **both deployed apps**: `revenue-os/app` at 07:00 UTC and
+      `arthur-os/app` at 09:00 UTC. `first-reply` needs nothing — its existing
+      follow-ups cron already queries the database daily. Still outstanding:
+      `arthur-os`'s Supabase project is paused right now and must be restored
+      by hand once, since a keep-alive cannot wake a sleeping database.
 
 ## App inventory
 
@@ -369,8 +372,17 @@ pilot #1.
     each other's work (#12 and #13 carried the same Prisma build fix and the
     same payment-processor decision). It resolved itself but cost review
     cycles. Point sessions at one project, or close idle ones.
-  Next: six of the seven Supabase projects are still paused, `arthur-os` among
-  them, so extend the keep-alive there if that app is meant to stay reachable.
-  Then FirstReply's live launch checklist — it is merged, deployed and green,
+  - **Ported the keep-alive to `arthur-os/app` too.** Worth knowing that the
+    two apps fail differently: `revenue-os`'s Vercel build runs
+    `prisma db push`, so a paused database turns the deploy red. `arthur-os`
+    builds with `prisma generate && next build`, which never connects, so a
+    pause there **deploys green** and only surfaces when login breaks. No red
+    check warns you, which makes the keep-alive more useful there, not less.
+    Deliberately not audit-logged: `audit.ts` covers handlers that change
+    state, and a daily row would bury real events in the append-only log.
+  Next: `arthur-os`'s Supabase project is still paused and needs one manual
+  restore before its keep-alive can hold it up; five unrelated Supabase
+  projects are also paused and were left alone. Then FirstReply's live launch
+  checklist — it is merged, deployed and green,
   and still has never been put in front of a paying agent, which remains the
   actual revenue step.
