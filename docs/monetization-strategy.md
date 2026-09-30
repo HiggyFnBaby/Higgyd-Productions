@@ -51,11 +51,17 @@ decided yet.
       freemium-with-upsells vs. selling templates/builds to other builders.
 - [ ] **App inventory**: list of apps already built, what each does, current
       monetization status (free / paid / unreleased) — needs to be filled in.
-- [ ] **Supabase free-tier pausing**: the free tier puts a database to sleep
-      after ~7 idle days, which breaks every deploy and login until someone
-      un-pauses it (see the 2026-09-17 session log entry). Pick one: upgrade
-      the Supabase org to Pro (~$25/mo, never pauses), live with manually
-      un-pausing before demos, or add a small daily "keep-alive" job.
+- [x] **Supabase free-tier pausing**: resolved — Derrick chose the **daily
+      keep-alive job** over paying for Pro or un-pausing by hand. Built as a
+      Vercel Cron entry in `revenue-os/app/vercel.json` calling
+      `/api/cron/keep-alive`, which runs one `SELECT 1` a day so the database
+      never sits idle for the ~7 days that trigger a pause. Requires
+      `CRON_SECRET` on the Vercel project or it refuses to run. See
+      `revenue-os/app/README.md` for setup and the two caveats (it prevents a
+      pause but cannot undo one, and the duplicate Vercel project means two
+      pings a day until one is retired). **Only `revenue-os/app` is covered so
+      far** — `arthur-os` has its own Supabase project, currently paused, and
+      would need the same treatment before it matters.
 
 ## App inventory
 
@@ -329,3 +335,42 @@ pilot #1.
   can make: update the stale `DATABASE_URL` on the `higgyd-productions`
   Vercel project, which is the last red check on #11. Then merge #11 and run
   FirstReply's live launch checklist to put it in front of one paying agent.
+- **2026-09-30** — Closed out the deploy outage and took the pausing problem
+  off the table for Revenue OS. Sequence of events, since this took two weeks
+  and three sessions to actually land:
+  - The `higgyd-productions` Vercel project had failed **every** deploy from
+    Sep 8 to Sep 26. Two causes stacked: the Revenue OS Supabase project was
+    paused (restored Sep 17), and the `DATABASE_URL` stored in that Vercel
+    project also held a stale password. Confirmed the second one from Vercel's
+    API: the variable had not been edited since Jul 29, so several redeploys in
+    between were replaying the same bad credential. Derrick updated it Sep 26
+    and the very next build went green.
+  - Redeployed `main` itself on Sep 30 to prove it green from the branch it
+    should deploy from — the Sep 26 green builds came from the PR #5 branch,
+    whose tree was byte-identical but which is not `main`.
+  - **Added the daily keep-alive** (this session's real deliverable): one
+    Vercel Cron job in `revenue-os/app` hitting `/api/cron/keep-alive`, doing
+    a single `SELECT 1`. Verified with `npm run typecheck` and `npm run build`;
+    the live cron needs `CRON_SECRET` set on the Vercel project before it does
+    anything, which is Derrick's step.
+  Notes for next time:
+  - **A paused Supabase project is indistinguishable from a wrong password.**
+    Both surface as Prisma `P1000: Authentication failed`. Check the Supabase
+    dashboard for a "Paused" badge before touching any credential.
+  - **Vercel's Redeploy button replays the build you clicked, not the newest
+    commit, and uses whatever env values are saved right now.** Several
+    redeploys during this outage re-ran an old pre-fix commit and looked like
+    the fix had failed. Change the variable first, then redeploy the newest
+    `main` entry.
+  - **Vercel's API exposes `updatedAt` per environment variable.** That is the
+    fastest way to prove whether a dashboard change actually saved, without
+    ever reading the secret.
+  - Four Claude sessions worked this repo in parallel on Sep 22 and duplicated
+    each other's work (#12 and #13 carried the same Prisma build fix and the
+    same payment-processor decision). It resolved itself but cost review
+    cycles. Point sessions at one project, or close idle ones.
+  Next: six of the seven Supabase projects are still paused, `arthur-os` among
+  them, so extend the keep-alive there if that app is meant to stay reachable.
+  Then FirstReply's live launch checklist — it is merged, deployed and green,
+  and still has never been put in front of a paying agent, which remains the
+  actual revenue step.
