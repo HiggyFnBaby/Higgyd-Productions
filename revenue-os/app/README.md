@@ -63,6 +63,46 @@ Then visit `http://localhost:3000`, click "Create workspace," and you're in.
     `src/lib/billing/` implementing the same interface (see that folder's
     `types.ts`).
 
+## Keeping the database awake (daily keep-alive)
+
+Supabase's free tier **pauses a project after about a week with no database
+activity**. A paused database then refuses connections in a way Prisma reports
+as `P1000: Authentication failed`, which reads like a wrong password. Because
+this project's Vercel build runs `prisma db push` before compiling, a pause
+breaks every deploy — that is exactly what happened silently from 2026-09-08
+until it was found and fixed on 2026-09-26.
+
+To stop that recurring, `vercel.json` registers one Vercel Cron job that calls
+`/api/cron/keep-alive` once a day. That endpoint runs a single `SELECT 1`. It
+touches no table and writes nothing; it exists only so the database sees
+traffic. Running daily against a ~7-day pause window leaves about six days of
+slack, so one missed run is harmless.
+
+**This only works if `CRON_SECRET` is set on the Vercel project.** Vercel sends
+that value as a `Bearer` token, and without it the endpoint refuses to run
+rather than sit on the internet unauthenticated. If it is missing, the cron will
+appear to run while doing nothing and the database can pause again.
+
+Setup, once per Vercel project that deploys this app:
+
+1. Generate a secret: `openssl rand -base64 32`
+2. Add it as `CRON_SECRET` in the Vercel project (Settings → Environment
+   Variables), for Production.
+3. Redeploy so the cron is registered.
+4. Confirm it took: the project's **Cron Jobs** tab should list
+   `/api/cron/keep-alive`, and after the first run its log should show
+   `{"ok":true,...}`. A `503 Not configured` there means step 2 did not save.
+
+Two caveats worth knowing:
+
+- **A keep-alive prevents pausing; it cannot undo one.** If the database is
+  already paused, the cron fails too. Restore the project in the Supabase
+  dashboard first, then the job keeps it up from there.
+- **This repo currently has two Vercel projects building this same folder**
+  (`higgyd-productions` and `revenue-os`). Both will register the cron, so the
+  database gets two harmless pings a day until one of those projects is
+  retired.
+
 ## Where things live (if you want to look under the hood)
 
 - `prisma/schema.prisma` — the data model (Workspace, Lead, AgentRun, Task,
