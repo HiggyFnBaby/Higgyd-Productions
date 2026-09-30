@@ -438,3 +438,44 @@ pilot #1.
   and still never put in front of a paying agent, which remains the actual
   revenue step. The two duplicate Vercel projects both building `revenue-os/app`
   are still worth collapsing.
+- **2026-09-30 (cont. 2)** — Set `CRON_SECRET` on all three Vercel projects via
+  the API (a distinct value each, `encrypted`, Production only), redeployed all
+  three from `main`, and verified the keep-alive end to end for the first time:
+  each `/api/cron/keep-alive` now answers **401** rather than 503, which proves
+  the secret reached the runtime and that the fail-closed branch works. For
+  `revenue-os` and `higgyd-productions` that finishes the job — their builds run
+  `prisma db push` against the live database, so their `SELECT 1` will succeed.
+  **But this turned up something bigger.** The `arthur-os` Vercel project had
+  **no environment variables at all** — no `DATABASE_URL`, no `NEXTAUTH_SECRET`,
+  nothing — only the `CRON_SECRET` just added, with `hiddenProductionEnvCount: 0`.
+  Confirmed independently by fetching `/api/auth/providers`, which returns
+  NextAuth's "problem with the server configuration" (its missing-secret error).
+  So **arthur-os production was never wired to its database.** The schema in that
+  Supabase project came from someone's local `prisma db push`, not from the
+  deployed app, which is the real reason every table was empty. The app built and
+  deployed green for weeks because its build is `prisma generate && next build`
+  and never connects — the exact blind spot the keep-alive was written for, one
+  layer deeper than expected. Its keep-alive is armed but will return 500 daily
+  until `DATABASE_URL` exists.
+  Set the three non-secret values (`NEXTAUTH_URL`, `OWNER_EMAIL`,
+  `EMAIL_PROVIDER=test`). Deliberately did NOT set `DATABASE_URL`,
+  `OWNER_PASSWORD`, `NEXTAUTH_SECRET` or `DELIVERY_SECRET`: every value passed
+  through a tool call lands in the session transcript, and those four grant
+  access (database, login, session forgery, signed download links). `CRON_SECRET`
+  was judged acceptable by the same test — it only permits triggering a
+  `SELECT 1` and rotating it is one dashboard edit.
+
+  Notes for next time:
+  - **A green Vercel deploy says nothing about whether the project is
+    configured.** arthur-os had zero environment variables and still deployed
+    green every time. Read the project's env list; don't infer from the build.
+  - **The transcript is part of the threat model.** Anything handed to a tool is
+    recorded, so the split is by what the secret grants, not by convenience:
+    machine-only and trivially rotatable (`CRON_SECRET`) is fine to set from a
+    session; anything granting access to data or an account is pasted into the
+    dashboard by hand.
+  Next: Derrick sets `DATABASE_URL`, `OWNER_PASSWORD`, `NEXTAUTH_SECRET` and
+  `DELIVERY_SECRET` on `arthur-os`; then `SETUP_SECRET` briefly so
+  `/api/setup/seed` can run once and be retired. Only then does arthur-os have a
+  working login. FirstReply's live launch checklist remains the actual revenue
+  step.
