@@ -19,8 +19,11 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        // Trimmed as well as lower-cased, to match api/signup/route.ts. Without
+        // this, an agent whose keyboard or password manager appends a space
+        // simply cannot log in, with no indication why.
         const agent = await prisma.agent.findUnique({
-          where: { email: credentials.email.toLowerCase() },
+          where: { email: credentials.email.trim().toLowerCase() },
         });
         if (!agent) return null;
 
