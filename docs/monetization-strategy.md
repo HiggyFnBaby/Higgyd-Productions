@@ -62,12 +62,16 @@ decided yet.
       gets two harmless pings a day until one project is retired). Covers
       **both deployed apps**: `revenue-os/app` at 07:00 UTC and
       `arthur-os/app` at 09:00 UTC. `first-reply` needs nothing — its existing
-      follow-ups cron already queries the database daily. Both apps' Supabase
-      projects were restored by hand on 2026-09-30 (a keep-alive prevents a
-      pause but cannot undo one), so the job now has something to hold up.
-      Still outstanding: `CRON_SECRET` on the `higgyd-productions`,
-      `revenue-os` and `arthur-os` Vercel projects — until it is set the job
-      fires daily and deliberately refuses to touch the database.
+      follow-ups cron already queries the database daily (and it is on Neon,
+      which does not pause). `CRON_SECRET` was set on all three Vercel projects
+      on 2026-09-30 and verified live.
+      **Proven on 2026-10-08**: after eight idle days `revenue-os`'s Supabase
+      project is still `ACTIVE_HEALTHY` and answers `SELECT 1`. That same
+      project used to pause, so the Sep 8-26 outage cause is closed.
+      `arthur-os` paused again over the same eight days, because its Vercel
+      project still has no `DATABASE_URL` — its keep-alive returned 500 every
+      run and the database saw no traffic. Same code, two apps, one variable
+      different: the one that could reach a database stayed awake.
 
 ## App inventory
 
@@ -479,3 +483,48 @@ pilot #1.
   `/api/setup/seed` can run once and be retired. Only then does arthur-os have a
   working login. FirstReply's live launch checklist remains the actual revenue
   step.
+- **2026-10-08** — Health check, eight days after the keep-alive and FirstReply
+  work. No code changed; nobody had touched the repo since PR #17. Two things
+  that were only *built* on Sep 30 are now *proven* by elapsed time, and one
+  unfinished item broke exactly as predicted.
+  - **The keep-alive works.** `revenue-os`'s Supabase project is
+    `ACTIVE_HEALTHY` after eight idle days and answers `SELECT 1`. That project
+    used to pause — it is what cost Sep 8-26 — so the outage cause is closed.
+  - **`arthur-os` paused again** (`INACTIVE`). Its keep-alive still has no
+    `DATABASE_URL` to reach, so it returned 500 on every run, the database saw
+    zero traffic, and Supabase slept it after ~7 days. The four variables from
+    the 2026-09-30 entry were never set. This is an unusually clean result: the
+    same cron code ran on two apps for eight days differing only in whether
+    `DATABASE_URL` existed, and only the one that could reach a database stayed
+    awake. It confirms both the fix and the original diagnosis.
+  - **FirstReply's 3-day follow-up fired unattended.** The test lead captured
+    2026-09-30 04:57 has `touch2SentAt = 2026-10-03 13:14` — three days later,
+    inside the cron's 13:00 UTC slot, with nobody watching. `touch3SentAt` is
+    correctly still null (due 2026-10-10). The scheduled job, its `CRON_SECRET`
+    auth, the eligibility query and the send all work in production.
+  - Everything else healthy: all five Vercel production deployments `READY` on
+    `8591070`, zero failed deployments in eight days, FirstReply's auth endpoint
+    returning 200.
+
+  Notes for next time:
+  - **Order matters when un-pausing `arthur-os`:** set `DATABASE_URL` FIRST,
+    then restore the project. Restoring without it just repeats this in a week,
+    since the keep-alive has nothing to reach.
+  - **Vercel's Hobby plan retains only one hour of runtime logs**, so a daily
+    cron's history cannot be audited after the fact. Verify a cron by its
+    *effect* — a timestamp column in the database — not by its logs.
+  - **A timestamp written only after a successful send doubles as delivery
+    proof.** `touch2SentAt` is set after `sendFollowUpTouch2` resolves, so it
+    establishes that Resend accepted the email even when Resend's own log is
+    unreachable. Worth preserving that ordering in any similar job.
+  - The Resend and Stripe connectors had expired and cannot be re-authorized
+    from a non-interactive session; reconnect them in claude.ai connector
+    settings before any work that needs them.
+  Next, unchanged and all one dashboard field each: `DATABASE_URL`,
+  `OWNER_PASSWORD`, `NEXTAUTH_SECRET`, `DELIVERY_SECRET` on `arthur-os` (then
+  restore the project and seed it); `STRIPE_SECRET_KEY` on `first-reply` for the
+  billing half of step 4; and a sending domain in Resend, which also unblocks
+  the agent-notification email. None of that is revenue. The revenue step is
+  still putting a FirstReply capture link in front of a real estate agent who
+  might pay $129/month — and everything technical in the way is now either done
+  or one field away.
