@@ -23,6 +23,14 @@ export default async function HomePage() {
           Create workspace
         </Link>
       </div>
+      <div className="flex gap-4 text-xs text-slate-400">
+        <Link href="/terms" className="hover:underline">
+          Terms
+        </Link>
+        <Link href="/privacy" className="hover:underline">
+          Privacy
+        </Link>
+      </div>
     </main>
   );
 }
