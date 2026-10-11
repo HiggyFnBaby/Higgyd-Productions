@@ -665,3 +665,19 @@ pilot #1.
   (did not auto-run offer-architect) to raise that with Derrick rather than
   mechanically repeating pilot #1's steps on weaker ground — awaiting his
   call on how to proceed.
+- **2026-10-11 (cont. 3)** — Derrick's call: talk to 2-3 real
+  Primerica/WFG-style agents before running `offer-architect`. Gave him 5
+  concrete questions to actually ask (not generic chat), targeted at the
+  one hypothesis worth validating (downline/team tracking burden):
+  1. How do you currently track your downline team's activity, production,
+     and compliance — spreadsheet, nothing, or a tool?
+  2. Roughly how many hours a week does that take?
+  3. Has poor tracking ever caused you to miss something real — a
+     compliance lapse, a recruit going inactive without you noticing, a
+     production number you got wrong?
+  4. What do you use today (if anything), and what's actually wrong with it?
+  5. Would you pay for a tool that did this automatically — and if so,
+     what would feel like a fair price?
+  **Pilot #2 chain is paused here until Derrick reports back** — next step
+  is his, not mine: run those conversations, then decide whether to resume
+  with `offer-architect` or reconsider the pilot choice.
