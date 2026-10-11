@@ -136,6 +136,54 @@ Do these in order. Every step is a form on a website, not code.
 Going live (a real Stripe key, real charges) is a separate, explicit
 decision — nothing in this checklist does it.
 
+## Going live (real payments) — do this only when you're actually ready to charge people
+
+Nothing below is code — every step is a form on a website. The app's
+production URL is `https://first-reply-steel.vercel.app`. Do these in
+order; you can set up Stripe, Payhip, or both (the billing page shows a
+button for whichever one is fully configured).
+
+### Stripe — switch from test to live
+
+1. In the [Stripe Dashboard](https://dashboard.stripe.com), toggle **Test
+   mode** off (top right).
+2. **Product catalog > Add product** — create the same $129/month
+   recurring Price you made in test mode, now for real. Copy its Price ID
+   (`price_...`).
+3. **Developers > API keys** — copy the live secret key (`sk_live_...`).
+4. **Developers > Webhooks > Add endpoint** — point it at
+   `https://first-reply-steel.vercel.app/api/billing/webhook`, select the
+   three events `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`. Copy
+   the signing secret it gives you (`whsec_...`).
+5. In Vercel (Project Settings > Environment Variables), replace
+   `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` with
+   these live values. Redeploy.
+
+### Payhip — set up the second option (optional)
+
+1. In the Payhip dashboard, create the $129/month recurring product by
+   hand (Payhip has no API for this). Open its direct checkout link — the
+   part after `?link=` is what goes in `PAYHIP_PRODUCT_LINK`.
+2. **Account > Settings > Advanced Settings > Checkout Settings** — set
+   the post-purchase redirect to
+   `https://first-reply-steel.vercel.app/dashboard/billing?checkout=success`.
+3. Generate a random secret for `PAYHIP_WEBHOOK_TOKEN`
+   (`openssl rand -base64 32` works). **Settings > Developer** — add a
+   webhook pointing at
+   `https://first-reply-steel.vercel.app/api/billing/webhook/payhip?token=<that same secret>`.
+4. In Vercel, set `PAYHIP_PRODUCT_LINK` and `PAYHIP_WEBHOOK_TOKEN` to the
+   values from steps 1 and 3. Redeploy.
+
+### Flip the switch
+
+Once at least one provider above is live, set `BILLING_REQUIRED="true"` in
+Vercel and redeploy. **This is the actual moment real people start being
+asked to pay** — everything before it is reversible setup; this step
+isn't, in the sense that unpaid agents will immediately stop getting the
+auto-reply/follow-up emails for new leads. Don't do this step until you've
+explicitly decided you're ready.
+
 ## Where things live
 
 - `prisma/schema.prisma` — the data model (Agent, Lead, Subscription).
