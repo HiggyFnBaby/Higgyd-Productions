@@ -573,3 +573,35 @@ pilot #1.
   Also noticed in passing, not yet acted on: `npm install` in `first-reply`
   reports 11 vulnerabilities (1 critical) — worth a dependency audit
   separately from this billing work.
+- **2026-10-11 (cont.)** — PR #19 merged (Derrick). Its merge-triggered
+  production deploy for `higgyd-productions` (the Vercel project building
+  `revenue-os/app`) failed with the same pre-existing issue flagged in the
+  PR comment — now confirmed on production itself, not just preview.
+  Investigated and fixed. Root cause, now fully understood: `revenue-os/app`
+  on `main` has only ever had ONE commit touch `prisma/schema.prisma` — the
+  original v1 scaffold. My later trial/paywall-enforcement work (which added
+  `Workspace.trialEndsAt`) happened on a feature branch that never merged
+  into `main` — not a deliberate removal, just work that never landed.
+  The live production database still physically had `trialEndsAt` with 7
+  real non-null values (almost certainly leftover from testing that feature
+  back when it briefly deployed, before `main` diverged onto a different,
+  trial-less line of development). Confirmed via code read that **nothing
+  in the current app reads or writes `trialEndsAt`, or gates on subscription
+  status at all** — the billing page is cosmetic display only — so those 7
+  values had zero functional effect either way. Derrick confirmed: drop the
+  column rather than resurrect the unused trial feature.
+  Fixed by: temporarily setting the `higgyd-productions` Vercel project's
+  Build Command to add `--accept-data-loss` (saved the exact original
+  command first — `npx prisma db push && next build`, confirmed verbatim
+  from an earlier build log, since the Vercel API doesn't surface
+  `buildCommand` through the tools available), redeploying once to apply
+  the drop (confirmed in the build log: "Your database is now in sync with
+  your Prisma schema"), then immediately reverting the Build Command to its
+  original safe form and redeploying again to confirm it builds clean going
+  forward with no override. Both verification deploys are `READY` on
+  production. Could not query the live database directly to double check
+  from that side — Vercel's tool declined to decrypt `DATABASE_URL`, and no
+  local Postgres/Vercel CLI exists in this sandbox — so this relied on the
+  build log's own report plus the code-level evidence, not an independent
+  DB read. Worth a quick manual sanity check in the Supabase dashboard if
+  you want extra confirmation, but nothing indicates a problem.
