@@ -528,3 +528,48 @@ pilot #1.
   still putting a FirstReply capture link in front of a real estate agent who
   might pay $129/month — and everything technical in the way is now either done
   or one field away.
+- **2026-10-11** — Derrick asked me to give him the FirstReply link + ready-to-
+  send outreach message (done — see the conversation, not repeated here), then
+  asked to make Stripe/Payhip ready to take real payments. Found the real state
+  by checking live systems, not just code: FirstReply's Vercel project has
+  `STRIPE_PRICE_ID`/`STRIPE_WEBHOOK_SECRET` but **no `STRIPE_SECRET_KEY` at
+  all** (checkout would 500 today), both existing values are explicitly
+  test-mode, and `BILLING_REQUIRED=false` is a deliberate kill switch from an
+  earlier session ("off until you deliberately decide to start charging
+  agents"). Also found the Stripe MCP connector in this session is a
+  *different* account ("Prompt Monster AI OS sandbox") with no FirstReply
+  product in it — can't configure the real account through it as-is.
+  Derrick confirmed: Payhip is meant as a second, alternative payment option
+  for FirstReply (not a different product), and he wants to actually go live,
+  not just prep.
+  **Shipped (code, verified, not yet live):** `first-reply` now supports two
+  simultaneous billing providers instead of one. Added `PAYHIP` to
+  `BillingProviderName`; `BillingProvider` interface gained `isConfigured()`
+  so the billing page only renders a button for providers that are actually
+  set up; `getBillingProvider()` → split into `getBillingProviderByName()` +
+  `listConfiguredBillingProviders()`; checkout route now takes `{provider}`
+  in the body instead of assuming one global provider; webhook handling
+  factored into a shared `applySubscriptionEvent()` used by both Stripe's
+  existing (unchanged-path, so its already-configured test webhook doesn't
+  break) and a new `/api/billing/webhook/payhip` route. New
+  `src/lib/billing/payhip.ts` — flagged honestly in its own top comment:
+  Payhip has no checkout-session API (it's a static per-product URL with
+  `metadata[key]=value` query params, confirmed via their direct-checkout-
+  link docs), Payhip's webhook JSON *shape* isn't confirmed anywhere in their
+  official docs (best-effort parsing, must be checked against the first real
+  delivery), and Payhip's webhook *signature* method is also unconfirmed —
+  used a shared secret token in the webhook URL itself instead of a guessed
+  HMAC check, which is honest about what's actually verifiable. Verified
+  `npm install`, `prisma generate`, `tsc --noEmit`, `next build` all pass
+  clean; `/api/billing/webhook/payhip` shows up as its own route.
+  **Still blocked on Derrick, not on code:** (1) reconnect/identify the real
+  FirstReply Stripe account so a live Price + live webhook can be created —
+  gave him the exact dashboard steps; (2) create the $129/mo recurring
+  product in Payhip's dashboard by hand (no API for this), grab its direct
+  checkout link, set Payhip's post-purchase redirect, and add the webhook
+  URL with a generated token. Once both land: set the real env vars in
+  Vercel and flip `BILLING_REQUIRED=true` — that's the actual go-live
+  moment, done deliberately, not as a side effect of adding a key.
+  Also noticed in passing, not yet acted on: `npm install` in `first-reply`
+  reports 11 vulnerabilities (1 critical) — worth a dependency audit
+  separately from this billing work.

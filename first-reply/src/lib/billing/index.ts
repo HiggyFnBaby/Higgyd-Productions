@@ -1,22 +1,44 @@
 import type { SubscriptionStatus } from "@prisma/client";
 import type { BillingProvider } from "@/lib/billing/types";
 import { stripeProvider } from "@/lib/billing/stripe";
+import { payhipProvider } from "@/lib/billing/payhip";
 
-// Only Stripe is implemented in v1. To add Paddle or LemonSqueezy later:
-// write src/lib/billing/paddle.ts implementing the same BillingProvider
-// interface, add a case below, and set BILLING_PROVIDER=paddle in .env.
-// Nothing in the checkout route, webhook route, or billing page changes.
+// Two providers can be configured and offered to agents at once (e.g. "pay
+// by card" and "pay via Payhip") — unlike the single-BILLING_PROVIDER setup
+// revenue-os/app uses. The checkout route picks one by key; the billing
+// page renders a button per provider that's actually configured.
+const PROVIDERS = {
+  stripe: stripeProvider,
+  payhip: payhipProvider,
+} as const;
+
+export type ProviderKey = keyof typeof PROVIDERS;
+
+export function isProviderKey(value: unknown): value is ProviderKey {
+  return typeof value === "string" && value in PROVIDERS;
+}
+
+export function getBillingProviderByName(key: ProviderKey): BillingProvider {
+  return PROVIDERS[key];
+}
+
+// Kept for any call site that just wants "the" provider (e.g. the webhook
+// route, which is provider-specific per URL, not per env var, for Stripe's
+// existing path — see src/app/api/billing/webhook/route.ts).
 export function getBillingProvider(): BillingProvider {
   const provider = process.env.BILLING_PROVIDER ?? "stripe";
-
-  switch (provider) {
-    case "stripe":
-      return stripeProvider;
-    default:
-      throw new Error(
-        `Unknown BILLING_PROVIDER "${provider}" — only "stripe" is implemented so far.`
-      );
+  if (!isProviderKey(provider)) {
+    throw new Error(`Unknown BILLING_PROVIDER "${provider}".`);
   }
+  return PROVIDERS[provider];
+}
+
+// What the billing page actually shows buttons for — only providers whose
+// required env vars are set, so nothing renders a button that 500s.
+export function listConfiguredBillingProviders(): Array<{ key: ProviderKey; provider: BillingProvider }> {
+  return (Object.entries(PROVIDERS) as Array<[ProviderKey, BillingProvider]>)
+    .filter(([, provider]) => provider.isConfigured())
+    .map(([key, provider]) => ({ key, provider }));
 }
 
 // "Is this agent a paying customer right now?" — the one definition the
