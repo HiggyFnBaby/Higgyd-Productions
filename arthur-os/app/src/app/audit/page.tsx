@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AuditForm } from "@/components/AuditForm";
 
 export default function AuditPage() {
@@ -12,6 +13,17 @@ export default function AuditPage() {
         </p>
       </div>
       <AuditForm />
+      <p className="text-center text-xs text-slate-400">
+        By submitting, you agree to our{" "}
+        <Link href="/terms" className="underline">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </main>
   );
 }

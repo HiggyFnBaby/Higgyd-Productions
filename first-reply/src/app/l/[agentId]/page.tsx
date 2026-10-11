@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { LeadForm } from "@/components/LeadForm";
 import { notFound } from "next/navigation";
@@ -15,6 +16,14 @@ export default async function LeadCapturePage({ params }: { params: { agentId: s
         </p>
       </div>
       <LeadForm agentId={agent.id} />
+      <p className="text-center text-xs text-slate-400">
+        By submitting, {agent.name} and FirstReply will use your info to
+        follow up with you. See our{" "}
+        <Link href="/privacy" className="underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </div>
   );
 }
