@@ -681,3 +681,31 @@ pilot #1.
   **Pilot #2 chain is paused here until Derrick reports back** — next step
   is his, not mine: run those conversations, then decide whether to resume
   with `offer-architect` or reconsider the pilot choice.
+- **2026-10-11 (cont. 4)** — Built Derrick a spreadsheet to log the 5
+  interview answers (strong/weak/mixed read + a running tally), plus a
+  phone-call script (opening statement, question sequence, follow-up
+  probes, objection handling, a short agent-world vocabulary list) so he
+  can run these conversations feeling prepared rather than winging it —
+  his explicit ask, since this is his first time doing this kind of
+  interview. One test run through the tracker got logged and then
+  correctly un-logged once Derrick clarified it wasn't a real interview.
+  Confirmed important context before going further: **Mark Goodlow is the
+  real Primerica advisor Primerica Assist Pro was originally built for.**
+  Derrick already knows him, his wife, and his team personally (good
+  rapport from an earlier interview) and already built him a free CRM —
+  the base44/Babel build referenced in the inventory table above — that
+  was never implemented. Derrick asked to find local Primerica/WFG-style
+  agencies near Pine Bluff, AR for cold-outreach emails; websearch found
+  no confirmed Primerica or WFG office in Pine Bluff itself (nearest
+  confirmed Primerica offices: Little Rock ~45 min away — where a
+  third-party advisor directory lists Goodlow — plus Russellville and
+  Rogers), and Pine Bluff's own insurance agencies (State Farm, Farmers,
+  Shelter, Nationwide) are traditional captive agents with no downline to
+  manage, so they're the wrong buyer type for this pilot's hypothesis
+  entirely. **Decision: skip cold outreach for now, focus the next 1-2
+  interviews on Mark's team instead** — existing rapport beats cold
+  strangers, and the unused CRM gives a concrete prop that turns the
+  willingness-to-pay question from hypothetical into "would you pay to
+  keep this going." Flagged the one real risk: friends may answer
+  politely rather than honestly, so a genuinely lukewarm/skeptical answer
+  from this group should count for more, not less.
