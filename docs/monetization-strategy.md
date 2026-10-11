@@ -649,3 +649,19 @@ pilot #1.
   reposition, broadened from "Primerica agents" to insurance/financial
   agents generally. Next: run `market-signal-researcher` against that
   niche, same chain as pilot #1 (signal → offer → angle → conversation).
+- **2026-10-11 (cont. 2)** — Ran `market-signal-researcher` for pilot #2.
+  Output: `revenue-os/signal-reports/insurance-financial-agents.md`.
+  **Evidence here is meaningfully weaker than pilot #1's report** — zero
+  Reddit hits despite repeated tries (real estate at least had review-site
+  material to fall back on), mostly vendor-comparison-blog sourcing.
+  Strongest entry: downline/team tracking burden specific to MLM-structured
+  agents, backed by one genuinely independent piece of evidence (an Ontario
+  FSRA regulatory enforcement notice against World Financial Group citing
+  lack of agent oversight) plus weaker vendor claims — nothing close to
+  pilot #1's kvCORE finding (explicit dollar figures + explicit
+  dissatisfaction + independent corroboration). Report explicitly
+  recommends Derrick do 2-3 direct conversations with real Primerica/WFG-
+  style agents before pricing anything confidently. Paused the chain here
+  (did not auto-run offer-architect) to raise that with Derrick rather than
+  mechanically repeating pilot #1's steps on weaker ground — awaiting his
+  call on how to proceed.
