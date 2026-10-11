@@ -90,19 +90,47 @@ stamp it across the rest of the portfolio. Do NOT attempt all 80+ at once.
 access with no login. This is a per-app gating factor: no login means adding
 one is a prerequisite step before billing can work.
 
-**Pilot selection:** Derrick asked for help choosing the 1–3 pilot apps.
-Criteria to use: (1) already has real usage/traction, (2) solves a clear
-painful problem for a small business, (3) has or can easily get login, (4)
-isn't the most complex build in the portfolio. Waiting on Derrick to share a
-shortlist of candidate apps (name + one-liner + login status + usage) so we
-can pick.
+**Pilot selection criteria** (used for both pilots below, keep using for
+pilot #3+): (1) real usage/traction, (2) solves a clear painful problem for
+a small business, (3) has or can easily get login, (4) isn't the most
+complex build in the portfolio. In practice, buyer clarity + an existing
+paid-tool category to wedge against (so there's proof people already pay
+for *something* like this) has mattered more than (1) and (3) — neither
+pilot had real usage or a login before being picked.
+
+**Pilot #1 — RealEstateOS Enterprise, sold as "FirstReply": live.** See
+`first-reply/` and the Session log below.
+
+**Pilot #2 — Primerica Assist Pro, to be renamed: active.** Chosen for the
+same reason FirstReply worked: a CRM/tool for financial-services-style
+agents, a buyer category that already pays for this kind of tool. The one
+blocker (Primerica is a real trademarked company) gets the same fix as
+RealEstateOS Enterprise → FirstReply: rename and reposition under an
+independent brand, broadened from "Primerica agents" specifically to
+insurance/financial agents generally, rather than naming a real company in
+the product. Next: run `market-signal-researcher` against this niche.
 
 Still need to find out: whether the 80+ apps share a common structure/template
 or are all bespoke one-off builds.
 
 | App name | Platform | What it does | Buyer | Monetization status | Notes |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| RevenueOS (flagship, retired) | base44 (assumed) | Earlier ~7,700-line attempt at a Revenue OS idea | — | Superseded | `revenue-os/app/` in this repo is canonical; this old build isn't maintained. |
+| RealEstateOS Enterprise | Unknown/base44 (assumed) | Real estate CRM (original); shipped product is narrower | Real estate agents (B2B) | **Pilot #1 — live, sold as "FirstReply"** | Renamed — "Enterprise" didn't fit the narrow, no-bloat offer. See `first-reply/`. |
+| Primerica Assist Pro | base44/Babel CRM | CRM for Primerica agents | Insurance/financial agents (B2B) | **Pilot #2 — active, to be renamed** | Trademark risk (real company name) — same rename/reposition fix as pilot #1. |
+| Higgins Media Broadcast Engine | Unknown | Media broadcast tooling; has a real Supabase schema already | Unclear (internal vs. sellable) | Runner-up, shelved | Buyer needs clarifying before pilot-ready. |
+| VA Claims Playbook OS | Unknown | VA disability claims help (`AICouncil.jsx`) | Veterans, or reframed to claims advocates/VSOs (B2B) | Runner-up, shelved | Strong pain point; needs the same B2C→B2B reframe (advocate who serves many clients, not the individual claimant) before it's pilot-ready. |
+| Higgins Media AI-BOS | Unknown | Business OS for Higgins Media | Unclear | Not evaluated | — |
+| HigginsFounderOS | Unknown | BookForge + Heritage Nexus | Unclear, likely personal/B2C | Not evaluated | — |
+| IGS Content Studio | Unknown | Content creation tooling | Unclear | Not evaluated | — |
+| Legacy Bobblehead Studio | Unknown | Niche bobblehead figurine business tool (~3,516 lines) | Unclear — internal tool vs. sellable to other personalized-product makers | Not evaluated | — |
+| Obsidian Weaver | Unknown | Dynamic character engine for fiction writing | Likely B2C/creator | Not evaluated | — |
+| Constitutional Justice CRM | Unknown | Legal/justice advocacy CRM (OIDR/JAC-SIS) | Unclear, possibly law firms/legal aid orgs (B2B) | Not evaluated | — |
+| TitanOS / CanvasAI / GrantTitan | Unknown | Grant-writing related (GrantTitan) | Unclear, possibly nonprofits/grant writers (B2B) | Not evaluated | No files listed — possibly early-stage/unbuilt. |
+| Liberty Housing Hub | base44 | Housing assistance hub | Unclear (nonprofit/consumer?) | Not evaluated | — |
+| DHFEcosystemOS Course | Unknown | Course/training product | Unclear | Not evaluated | May be a course, not an app. |
+| Higgs Secure Cloud Vault | Unknown | "10-phase platform vision" | Unclear | Not evaluated | Sounds early/conceptual. |
+| Morning Intelligence Briefing | Unknown | Daily briefing tool | Likely B2C/personal | Not evaluated | — |
 
 ## Related project: Revenue OS
 
@@ -605,3 +633,79 @@ pilot #1.
   build log's own report plus the code-level evidence, not an independent
   DB read. Worth a quick manual sanity check in the Supabase dashboard if
   you want extra confirmation, but nothing indicates a problem.
+- **2026-10-11 (cont.)** — Shortlisted pilot #2. Discovered the original
+  15-app portfolio list and pilot-selection analysis from 2026-07-23 never
+  actually made it into this file — it only ever existed on a feature
+  branch that got abandoned (same root cause as the `trialEndsAt` issue
+  above: work done on a branch that never merged into `main`). Recovered it
+  from this session's own conversation history (Derrick didn't need to
+  re-supply it) and written into the App inventory table above properly
+  this time, so it survives for real now. **Picked Primerica Assist Pro as
+  pilot #2**, over VA Claims Playbook OS (reframed to VSOs/claims
+  advocates) — Derrick's call. Reasoning: same proven CRM-for-agents
+  pattern as FirstReply (pilot #1), buyer category already pays for this
+  kind of tool, and the one blocker (Primerica is a real trademarked
+  company) has the exact same fix already proven on pilot #1: rename and
+  reposition, broadened from "Primerica agents" to insurance/financial
+  agents generally. Next: run `market-signal-researcher` against that
+  niche, same chain as pilot #1 (signal → offer → angle → conversation).
+- **2026-10-11 (cont. 2)** — Ran `market-signal-researcher` for pilot #2.
+  Output: `revenue-os/signal-reports/insurance-financial-agents.md`.
+  **Evidence here is meaningfully weaker than pilot #1's report** — zero
+  Reddit hits despite repeated tries (real estate at least had review-site
+  material to fall back on), mostly vendor-comparison-blog sourcing.
+  Strongest entry: downline/team tracking burden specific to MLM-structured
+  agents, backed by one genuinely independent piece of evidence (an Ontario
+  FSRA regulatory enforcement notice against World Financial Group citing
+  lack of agent oversight) plus weaker vendor claims — nothing close to
+  pilot #1's kvCORE finding (explicit dollar figures + explicit
+  dissatisfaction + independent corroboration). Report explicitly
+  recommends Derrick do 2-3 direct conversations with real Primerica/WFG-
+  style agents before pricing anything confidently. Paused the chain here
+  (did not auto-run offer-architect) to raise that with Derrick rather than
+  mechanically repeating pilot #1's steps on weaker ground — awaiting his
+  call on how to proceed.
+- **2026-10-11 (cont. 3)** — Derrick's call: talk to 2-3 real
+  Primerica/WFG-style agents before running `offer-architect`. Gave him 5
+  concrete questions to actually ask (not generic chat), targeted at the
+  one hypothesis worth validating (downline/team tracking burden):
+  1. How do you currently track your downline team's activity, production,
+     and compliance — spreadsheet, nothing, or a tool?
+  2. Roughly how many hours a week does that take?
+  3. Has poor tracking ever caused you to miss something real — a
+     compliance lapse, a recruit going inactive without you noticing, a
+     production number you got wrong?
+  4. What do you use today (if anything), and what's actually wrong with it?
+  5. Would you pay for a tool that did this automatically — and if so,
+     what would feel like a fair price?
+  **Pilot #2 chain is paused here until Derrick reports back** — next step
+  is his, not mine: run those conversations, then decide whether to resume
+  with `offer-architect` or reconsider the pilot choice.
+- **2026-10-11 (cont. 4)** — Built Derrick a spreadsheet to log the 5
+  interview answers (strong/weak/mixed read + a running tally), plus a
+  phone-call script (opening statement, question sequence, follow-up
+  probes, objection handling, a short agent-world vocabulary list) so he
+  can run these conversations feeling prepared rather than winging it —
+  his explicit ask, since this is his first time doing this kind of
+  interview. One test run through the tracker got logged and then
+  correctly un-logged once Derrick clarified it wasn't a real interview.
+  Confirmed important context before going further: **Mark Goodlow is the
+  real Primerica advisor Primerica Assist Pro was originally built for.**
+  Derrick already knows him, his wife, and his team personally (good
+  rapport from an earlier interview) and already built him a free CRM —
+  the base44/Babel build referenced in the inventory table above — that
+  was never implemented. Derrick asked to find local Primerica/WFG-style
+  agencies near Pine Bluff, AR for cold-outreach emails; websearch found
+  no confirmed Primerica or WFG office in Pine Bluff itself (nearest
+  confirmed Primerica offices: Little Rock ~45 min away — where a
+  third-party advisor directory lists Goodlow — plus Russellville and
+  Rogers), and Pine Bluff's own insurance agencies (State Farm, Farmers,
+  Shelter, Nationwide) are traditional captive agents with no downline to
+  manage, so they're the wrong buyer type for this pilot's hypothesis
+  entirely. **Decision: skip cold outreach for now, focus the next 1-2
+  interviews on Mark's team instead** — existing rapport beats cold
+  strangers, and the unused CRM gives a concrete prop that turns the
+  willingness-to-pay question from hypothetical into "would you pay to
+  keep this going." Flagged the one real risk: friends may answer
+  politely rather than honestly, so a genuinely lukewarm/skeptical answer
+  from this group should count for more, not less.
