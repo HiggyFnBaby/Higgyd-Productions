@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAgentId } from "@/lib/currentAgent";
-import { isSubscribed } from "@/lib/billing";
+import { isSubscribed, listConfiguredBillingProviders } from "@/lib/billing";
 import { UpgradeButton } from "@/components/UpgradeButton";
+
+const PROVIDER_LABEL: Record<string, string> = {
+  stripe: "Subscribe with card — $129/month",
+  payhip: "Subscribe via Payhip — $129/month",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +30,7 @@ export default async function BillingPage({
   const subscription = await prisma.subscription.findUnique({ where: { agentId } });
   const status = subscription?.status ?? "NONE";
   const subscribed = isSubscribed(status);
+  const configuredProviders = listConfiguredBillingProviders();
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
@@ -66,7 +72,12 @@ export default async function BillingPage({
             Month to month, cancel anytime. Your lead-capture link keeps working either way — a
             subscription is what keeps the instant replies and follow-ups going out.
           </p>
-          <UpgradeButton />
+          {configuredProviders.length === 0 && (
+            <p className="text-sm text-amber-600">Billing isn&apos;t configured yet.</p>
+          )}
+          {configuredProviders.map(({ key }) => (
+            <UpgradeButton key={key} provider={key} label={PROVIDER_LABEL[key] ?? `Subscribe via ${key}`} />
+          ))}
         </div>
       )}
     </div>

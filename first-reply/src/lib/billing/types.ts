@@ -25,6 +25,9 @@ export interface NormalizedSubscriptionEvent {
 
 export interface BillingProvider {
   name: BillingProviderName;
+  // Lets the checkout UI show only the providers that actually have their
+  // env vars set, instead of rendering a button that 500s when clicked.
+  isConfigured(): boolean;
   createCheckoutSession(params: CheckoutSessionParams): Promise<{ url: string }>;
   // Returns null for webhook events this provider sends that the app doesn't
   // care about (e.g. an invoice email receipt event) — not every provider

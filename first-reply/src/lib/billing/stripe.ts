@@ -27,6 +27,10 @@ function mapStripeStatus(status: Stripe.Subscription.Status): NormalizedSubscrip
 export const stripeProvider: BillingProvider = {
   name: "STRIPE",
 
+  isConfigured() {
+    return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID && process.env.STRIPE_WEBHOOK_SECRET);
+  },
+
   async createCheckoutSession({ agentId, customerEmail, successUrl, cancelUrl }: CheckoutSessionParams) {
     const priceId = process.env.STRIPE_PRICE_ID;
     if (!priceId) throw new Error("STRIPE_PRICE_ID is not set — see .env.example.");
