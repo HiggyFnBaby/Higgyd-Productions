@@ -27,6 +27,8 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
+  const TRIAL_LENGTH_DAYS = 14;
+  const trialEndsAt = new Date(Date.now() + TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000);
 
   const user = await prisma.user.create({
     data: {
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
       memberships: {
         create: {
           role: "owner",
-          workspace: { create: { name: workspaceName } },
+          workspace: { create: { name: workspaceName, trialEndsAt } },
         },
       },
     },

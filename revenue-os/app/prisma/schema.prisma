@@ -46,6 +46,10 @@ enum BillingProviderName {
 model Workspace {
   id           String        @id @default(cuid())
   name         String
+  // Set at signup to 14 days out (see api/signup/route.ts). Not yet read
+  // anywhere — no trial-gating logic exists in v1 — but the column already
+  // holds real data in production, so it stays required rather than dropped.
+  trialEndsAt  DateTime
   createdAt    DateTime      @default(now())
   memberships  Membership[]
   leads        Lead[]
