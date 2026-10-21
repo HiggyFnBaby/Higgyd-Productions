@@ -1,9 +1,11 @@
 # Airtable Trial Migration Strategy
 
 **Status: done.** Both Airtable bases are audited, the Postgres schema and
-importer are built and validated end-to-end, and the actual data is now
+importer are built and validated end-to-end, the actual data is now
 loaded into the real `revenue_os_crm` / `content_ops` schemas in the live
-Revenue OS Supabase database (see Step 5). Everything below is already in
+Revenue OS Supabase database (see Step 5), and all 5 of the original
+Airtable automations — including the 2 that send email — are now live as
+Postgres triggers/cron jobs (see Step 4). Everything below is already in
 the repo — this doc is the map of what exists and what was decided along
 the way.
 
@@ -120,21 +122,43 @@ layer entirely, so I didn't do that. Instead:
   DATABASE_URL=postgresql://... python3 db/airtable-migration/import_to_postgres.py
   ```
 
-## Step 4: Automations → rebuilt
+## Step 4: Automations → rebuilt (all 5, including the 2 that email)
 
-Of the 5 drafted (never-deployed) Airtable automations:
+Of the 5 drafted (never-deployed) Airtable automations, all 5 are now live
+against the real database:
 
-- **3 are pure DB logic** and are already live as Postgres triggers in
+- **3 are pure DB logic** and are live as Postgres triggers in
   `schema.sql`: new-contact → qualification Activity, Deal→Won → auto-create
   Order (+ carries over the deal's linked products), Product→Live → CMO
   distribution Activity.
-- **2 send email** (executive stage-change alert, daily pipeline digest),
-  which a plain Postgres trigger can't do on its own. I left these as a
-  design note in `schema.sql` rather than half-implementing them: the digest
-  query itself is there as `revenue_os_crm.open_pipeline_digest`, ready for
-  either a Supabase Edge Function on a `pg_notify` channel or a small
-  scheduled script to email its results — whichever matches how you end up
-  running the rest of the backend.
+- **2 send email** (executive stage-change alert, daily pipeline digest).
+  A plain Postgres trigger can't call an email API on its own, so these are
+  built in `db/airtable-migration/email_automations.sql` using three
+  Supabase/Postgres pieces instead of a separate app or Edge Function:
+  - **`pg_net`** — an async HTTP client inside Postgres, so a trigger or a
+    scheduled job can call the Resend API directly.
+  - **`pg_cron`** — runs the daily digest on a schedule (`0 8 * * *` UTC by
+    default; adjust the cron expression if 8am is meant to be local time).
+  - **Supabase Vault** — holds the Resend API key encrypted in the
+    database; it's never written to this repo as plaintext.
+
+  Both automations default to **test mode**: `revenue_os_crm.automation_settings`
+  starts with `email_provider = 'test'` and all 3 recipient/from settings
+  unset, so every trigger fire and every daily cron run executes for real
+  and logs a row to `revenue_os_crm.email_events` — you can see exactly what
+  would have been sent — but no real email goes out, matching this repo's
+  "test/sandbox mode until explicitly authorized" rule. `email_automations.sql`
+  has step-by-step instructions at the bottom for going live (store the
+  Resend key in Vault, fill in `email_from`/the two recipient settings, flip
+  `email_provider` to `'resend'`) whenever you're ready for real sends.
+
+  Verified end-to-end against the live database: flipping a deal's stage
+  fired `trg_deal_stage_alert` and logged a `deal_stage_alert` row; calling
+  `revenue_os_crm.run_pipeline_digest()` logged a `pipeline_digest` row with
+  the correct open-deal count; both correctly refused to "send" (status
+  `failed`, with an explanatory error) when no recipient was configured,
+  and correctly logged `sent_test` once a recipient was set. Settings were
+  left back at their safe, unconfigured defaults afterward.
 
 ## Step 5: Loaded into the real database — done
 
@@ -184,7 +208,7 @@ instead of psycopg2. Verified after loading:
   remaining advisory item is a pre-existing, unrelated Auth setting
   (leaked-password protection) that predates this work and wasn't touched.
 
-What's *not* loaded: the 2 automations that send email (executive
-stage-change alert, daily pipeline digest) are still just the design note
-from Step 4 — no Edge Function or cron job has been built yet. Build those
-if/when you actually want the alerts firing.
+The 2 email automations (executive stage-change alert, daily pipeline
+digest) that Step 4 originally left as a design note are now built the
+same way — see Step 4 above for how they work and how to turn on real
+sending.
