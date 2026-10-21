@@ -24,6 +24,19 @@ function mapStripeStatus(status: Stripe.Subscription.Status): NormalizedSubscrip
   }
 }
 
+// Newer Stripe API versions moved current_period_end from the Subscription
+// onto each subscription item; older ones still send it on the Subscription.
+// Read the item first, fall back to the old location, so either works.
+function periodEnd(subscription: Stripe.Subscription): Date {
+  const seconds =
+    (subscription.items.data[0] as { current_period_end?: number } | undefined)?.current_period_end ??
+    (subscription as unknown as { current_period_end?: number }).current_period_end;
+  if (typeof seconds !== "number") {
+    throw new Error(`Stripe subscription ${subscription.id} has no current_period_end.`);
+  }
+  return new Date(seconds * 1000);
+}
+
 export const stripeProvider: BillingProvider = {
   name: "STRIPE",
 
@@ -75,7 +88,7 @@ export const stripeProvider: BillingProvider = {
       providerSubscriptionId: subscription.id,
       status: mapStripeStatus(subscription.status),
       priceId: subscription.items.data[0]?.price?.id,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodEnd: periodEnd(subscription),
     };
   },
 };
