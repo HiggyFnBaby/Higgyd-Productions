@@ -80,7 +80,9 @@ def load_raw(table_name):
 
 def scalar_value(cell, kind):
     if cell is None:
-        return None
+        # Airtable omits a checkbox field entirely when it's unchecked rather
+        # than sending false, so a missing value means false, not unknown.
+        return False if kind == "bool" else None
     if kind == "select":
         return cell.get("name") if isinstance(cell, dict) else cell
     if kind == "multiselect":
@@ -109,6 +111,12 @@ def insert_scalars(cur, table_name, field_map):
 
     for record in records:
         cells = record.get("cellValuesByFieldId", {})
+        if not cells:
+            # A fully blank Airtable row (every field empty, including the
+            # primary field) -- nothing to migrate, so skip it rather than
+            # violate the primary field's NOT NULL constraint.
+            print(f"skipping blank record {record['id']} in {schema}.{table}")
+            continue
         values = [record["id"]]
         for field_id, (col, kind) in field_map.items():
             if kind in ("link", "computed"):
