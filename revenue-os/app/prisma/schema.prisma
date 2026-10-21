@@ -152,3 +152,29 @@ model Subscription {
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 }
+
+// Public lead-capture table written by the Supabase edge function
+// `capture-lead` (called from the king-of-ai-os landing pages). It is NOT
+// managed through the app, but it lives in the same database, so it has to
+// be declared here. Without this model, `prisma db push` sees an unknown
+// table and tries to DROP it, which deletes real leads. Keep this in sync
+// with the edge function and the live table (column names/types match it
+// exactly, so `db push` has nothing to change).
+model WebsiteLead {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  type       String   @default("lead")
+  name       String?
+  email      String?
+  website    String?
+  business   String?
+  plan       String?
+  bottleneck String?
+  goals      String?
+  source     String?
+  userAgent  String?  @map("user_agent")
+  raw        Json?
+
+  @@index([createdAt(sort: Desc)], map: "website_leads_created_at_idx")
+  @@map("website_leads")
+}
