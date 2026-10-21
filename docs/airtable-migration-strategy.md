@@ -1,9 +1,11 @@
 # Airtable Trial Migration Strategy
 
-Audited both Airtable bases in this workspace and built the Postgres migration
-target for them ahead of the Team-plan trial expiring. Everything below is
-already in the repo — this doc is the map of what exists and what's still an
-open call.
+**Status: done.** Both Airtable bases are audited, the Postgres schema and
+importer are built and validated end-to-end, and the actual data is now
+loaded into the real `revenue_os_crm` / `content_ops` schemas in the live
+Revenue OS Supabase database (see Step 5). Everything below is already in
+the repo — this doc is the map of what exists and what was decided along
+the way.
 
 ## Step 1: Audit — what's actually in Airtable
 
@@ -134,14 +136,55 @@ Of the 5 drafted (never-deployed) Airtable automations:
   scheduled script to email its results — whichever matches how you end up
   running the rest of the backend.
 
-## What's actually still an open decision
+## Step 5: Loaded into the real database — done
 
-Given the trial's expiring days, not weeks, out, and the CSV/JSON backups
-already exist regardless of what happens next — there's no urgency risk left
-on data loss. The one real remaining choice is whether the `revenue_os_crm` /
-`content_ops` schemas above should live in the **same Supabase/Postgres
-project** `revenue-os/app` already uses, or a **separate database** — same
-project is simpler to operate (one connection string, one place to look) and
-is what the schema names (as Postgres schemas, not top-level DBs) are built
-for, but a separate database keeps the CRM data fully isolated from the
-`revenue-os/app` tenant data if that matters to you.
+The one open decision below ("same Supabase project vs. a separate
+database") is resolved: it's the same project. `db/airtable-migration/schema.sql`
+is applied as a migration to the **"Revenue OS" Supabase project**
+(`wyaqpsnceqctufpmgmpr`) — confirmed as the right one by its existing
+`public` tables (`Workspace`, `User`, `Membership`, `Lead`, `AgentRun`,
+`Task`, `StageEvent`, `Subscription`) matching `revenue-os/app`'s Prisma
+schema exactly. `revenue_os_crm` and `content_ops` are new schemas there,
+additive alongside `public` — nothing about `revenue-os/app` changed.
+
+Before touching the live database, the full schema + import path was run
+end-to-end against a disposable local Postgres to validate it for real
+(not just `py_compile`). That surfaced two real bugs in
+`import_to_postgres.py`, both now fixed on `main` (PR #26):
+
+1. Airtable omits an unchecked checkbox field entirely rather than sending
+   `false`, which was crashing the import against the `NOT NULL DEFAULT
+   false` boolean columns.
+2. One Content Calendar row (`recbI4pGQJYcEcKDs`) is a completely blank
+   Airtable record (empty title and all) — the importer now skips a
+   record with no cell data instead of crashing.
+
+Since Supabase's MCP tools don't expose a raw Postgres connection string
+(by design), the actual load against the live project went through
+Supabase's `execute_sql`/`apply_migration` tools rather than running
+`import_to_postgres.py` directly: the same logic, reading the same JSON
+exports, just emitting SQL text with subquery-based foreign-key resolution
+instead of psycopg2. Verified after loading:
+
+- All 9 tables' row counts match the original Airtable audit exactly.
+- `activities` is 16, not 10 — confirming the new-contact → qualification
+  trigger fired for real on each of the 6 inserted Contacts.
+- All 5 join tables (`deal_products`, `order_products`, `content_products`,
+  `content_deals`, `content_leads`) resolved to the expected counts.
+- The `contacts_computed` / `deals_computed` rollup views match
+  hand-calculated expectations.
+- Both state-transition triggers (`fn_deal_won_creates_order`,
+  `fn_product_live_distribution_task`) were exercised directly and fired
+  correctly.
+- All 9 Shorts and the 1 Performance row resolved their title-matched
+  foreign keys.
+- Ran Supabase's security advisor afterward (standard practice after a
+  schema change) — it flagged a real gap in the 3 new trigger functions
+  (mutable `search_path`), fixed with a follow-up migration. The only
+  remaining advisory item is a pre-existing, unrelated Auth setting
+  (leaked-password protection) that predates this work and wasn't touched.
+
+What's *not* loaded: the 2 automations that send email (executive
+stage-change alert, daily pipeline digest) are still just the design note
+from Step 4 — no Edge Function or cron job has been built yet. Build those
+if/when you actually want the alerts firing.
