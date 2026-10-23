@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
+import { Logo } from "@/components/Logo";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -12,7 +13,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen">
       <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
         <div className="flex items-center gap-6">
-          <span className="font-bold">FirstReply</span>
+          <Link href="/dashboard" aria-label="FirstReply home">
+            <Logo size={28} />
+          </Link>
           <nav className="flex gap-4 text-sm">
             <Link href="/dashboard" className="hover:underline">
               Leads

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -43,6 +44,9 @@ export default function SignupPage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 px-4">
+      <Link href="/" aria-label="FirstReply home" className="mb-2 self-start">
+        <Logo size={32} />
+      </Link>
       <h1 className="text-xl font-bold">Create your FirstReply account</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input

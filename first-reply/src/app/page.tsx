@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { LogoMark } from "@/components/Logo";
 
 export default function HomePage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-6 px-4 text-center">
+      <LogoMark size={72} />
       <h1 className="text-3xl font-bold">FirstReply</h1>
       <p className="text-slate-600">
         Never lose another lead to slow response. Every new lead gets an instant,
