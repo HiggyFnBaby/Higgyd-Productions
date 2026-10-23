@@ -23,6 +23,16 @@ export default async function HomePage() {
           Create workspace
         </Link>
       </div>
+      <p className="text-sm text-slate-500">
+        Real estate agent?{" "}
+        <a
+          href="https://first-reply-steel.vercel.app/demo?utm_source=revenue-os&utm_medium=app-home&utm_campaign=firstreply-demo"
+          className="underline"
+        >
+          Watch the FirstReply preview
+        </a>
+        .
+      </p>
       <div className="flex gap-4 text-xs text-slate-400">
         <Link href="/terms" className="hover:underline">
           Terms
