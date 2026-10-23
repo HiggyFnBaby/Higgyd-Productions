@@ -1,0 +1,18 @@
+# FirstReply
+
+> FirstReply is lead follow-up software for real estate agents. Every new lead gets an instant, automatic email reply, and follow-up emails go out at 3 and 10 days, so slow response never costs the agent a lead. $129 per month per agent.
+
+## How it works
+- An agent signs up and receives a personal lead-capture link to share on a website, bio link or ad.
+- When someone submits the form, FirstReply emails that lead an instant reply and emails the agent the lead's details.
+- If the lead goes quiet, FirstReply sends automatic follow-up emails at 3 days and 10 days.
+- The agent dashboard lists every lead and lets the agent mark it Contacted, Won or Lost.
+
+## Pricing
+- $129 per month per agent.
+
+## Pages
+- [Home](https://first-reply-steel.vercel.app/): overview, demo video and FAQ
+- [Create account](https://first-reply-steel.vercel.app/signup)
+- [Terms of Service](https://first-reply-steel.vercel.app/terms)
+- [Privacy Policy](https://first-reply-steel.vercel.app/privacy)
