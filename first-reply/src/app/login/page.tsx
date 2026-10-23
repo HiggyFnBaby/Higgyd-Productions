@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,6 +28,9 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 px-6">
+      <Link href="/" aria-label="FirstReply home" className="mb-2 self-start">
+        <Logo size={32} />
+      </Link>
       <h1 className="text-2xl font-bold">Log in</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
