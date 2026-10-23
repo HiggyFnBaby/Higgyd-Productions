@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { FloatingBackground } from "@/components/FloatingBackground";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,43 +28,48 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 px-6">
-      <Link href="/" aria-label="FirstReply home" className="mb-2 self-start">
-        <Logo size={32} />
-      </Link>
-      <h1 className="text-2xl font-bold">Log in</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
-          type="email"
-          placeholder="Email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2"
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50"
-        >
-          {loading ? "Logging in..." : "Log in"}
-        </button>
-      </form>
-      <p className="text-sm text-slate-600">
-        No account yet?{" "}
-        <Link href="/signup" className="underline">
-          Create one
-        </Link>
-      </p>
+    <main className="relative min-h-screen">
+      <FloatingBackground />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
+        <div className="flex flex-col gap-4 rounded-2xl border border-amber-400/30 bg-white p-6 shadow-2xl">
+          <Link href="/" aria-label="FirstReply home" className="mb-2 self-start">
+            <Logo size={32} />
+          </Link>
+          <h1 className="text-2xl font-bold">Log in</h1>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2"
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50"
+            >
+              {loading ? "Logging in..." : "Log in"}
+            </button>
+          </form>
+          <p className="text-sm text-slate-600">
+            No account yet?{" "}
+            <Link href="/signup" className="underline">
+              Create one
+            </Link>
+          </p>
+        </div>
+      </div>
     </main>
   );
 }

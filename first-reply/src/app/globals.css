@@ -1,3 +1,54 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Floating background (see src/components/FloatingBackground.tsx) */
+.fr-row {
+  position: absolute;
+  left: 0;
+  display: flex;
+  width: max-content;
+  white-space: nowrap;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(212, 175, 55, var(--fr-o, 0.18));
+  animation: fr-scroll var(--fr-seconds, 90s) linear infinite;
+  will-change: transform;
+}
+.fr-row-reverse {
+  animation-direction: reverse;
+}
+.fr-row > span {
+  padding-right: 0.5em;
+}
+@keyframes fr-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.fr-glow {
+  background: radial-gradient(ellipse 60% 45% at 70% 92%, rgba(242, 199, 92, 0.32), transparent 70%);
+  animation: fr-breathe 9s ease-in-out infinite;
+}
+@keyframes fr-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-row,
+  .fr-glow {
+    animation: none;
+  }
+}

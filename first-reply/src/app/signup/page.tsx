@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { FloatingBackground } from "@/components/FloatingBackground";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -43,61 +44,66 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 px-4">
-      <Link href="/" aria-label="FirstReply home" className="mb-2 self-start">
-        <Logo size={32} />
-      </Link>
-      <h1 className="text-xl font-bold">Create your FirstReply account</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
-          placeholder="Your name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 text-sm"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 text-sm"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 text-sm"
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-        >
-          {loading ? "Creating..." : "Create account"}
-        </button>
-      </form>
-      <p className="text-xs text-slate-400">
-        By creating an account you agree to our{" "}
-        <Link href="/terms" className="underline">
-          Terms
-        </Link>{" "}
-        and{" "}
-        <Link href="/privacy" className="underline">
-          Privacy Policy
-        </Link>
-        .
-      </p>
-      <p className="text-sm text-slate-500">
-        Already have an account?{" "}
-        <Link href="/login" className="underline">
-          Log in
-        </Link>
-      </p>
+    <div className="relative min-h-screen">
+      <FloatingBackground />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
+        <div className="flex flex-col gap-4 rounded-2xl border border-amber-400/30 bg-white p-6 shadow-2xl">
+          <Link href="/" aria-label="FirstReply home" className="mb-2 self-start">
+            <Logo size={32} />
+          </Link>
+          <h1 className="text-xl font-bold">Create your FirstReply account</h1>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <input
+              placeholder="Your name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+            >
+              {loading ? "Creating..." : "Create account"}
+            </button>
+          </form>
+          <p className="text-xs text-slate-400">
+            By creating an account you agree to our{" "}
+            <Link href="/terms" className="underline">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+          <p className="text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link href="/login" className="underline">
+              Log in
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
