@@ -47,6 +47,15 @@ export default function PrivacyPage() {
         contacted to them.
       </p>
 
+      <h2>If you requested the demo video</h2>
+      <p>
+        If you entered your name and email to watch the FirstReply preview
+        video, we save them so we can follow up with you about FirstReply.
+        They are stored in our own database, separate from any agent's
+        leads, and are not shared with agents. You can ask us to delete
+        them at any time (see "Your choices" below).
+      </p>
+
       <h2>Who we share it with (subprocessors)</h2>
       <ul>
         <li>

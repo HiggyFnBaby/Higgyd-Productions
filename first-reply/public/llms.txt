@@ -13,6 +13,7 @@
 
 ## Pages
 - [Home](https://first-reply-steel.vercel.app/): overview, demo video and FAQ
+- [Watch the preview video](https://first-reply-steel.vercel.app/demo)
 - [Create account](https://first-reply-steel.vercel.app/signup)
 - [Terms of Service](https://first-reply-steel.vercel.app/terms)
 - [Privacy Policy](https://first-reply-steel.vercel.app/privacy)
