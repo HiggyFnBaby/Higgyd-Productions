@@ -290,11 +290,12 @@ CREATE TRIGGER trg_product_live_distribution_task
 
 -- "3 - Deal Stage Change -> Executive Email Alert" and
 -- "5 - Daily Open-Pipeline Digest" both send email, which a Postgres trigger
--- can't do on its own. Left as application/cron-layer jobs -- see the
--- strategy doc's automations section for the recommended equivalents
--- (a Supabase Edge Function on a `deal_stage_changes` NOTIFY channel, and a
--- pg_cron / scheduled script hitting the same digest query as
--- content_ops.open_pipeline_digest below).
+-- can't do on its own -- these are built in email_automations.sql instead,
+-- using pg_net + pg_cron + Supabase Vault (see that file and the strategy
+-- doc's Step 4 for how it works and how to go live). Both default to a
+-- safe test mode that logs instead of sending until explicitly configured.
+-- The digest query itself lives here as revenue_os_crm.open_pipeline_digest
+-- below, which email_automations.sql's cron job reads from.
 
 CREATE VIEW revenue_os_crm.open_pipeline_digest AS
 SELECT id, deal_name, stage, amount, owner_agent, expected_close
