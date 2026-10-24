@@ -709,3 +709,43 @@ pilot #1.
   keep this going." Flagged the one real risk: friends may answer
   politely rather than honestly, so a genuinely lukewarm/skeptical answer
   from this group should count for more, not less.
+- **2026-10-24** — Catch-up after a ~2-week gap with no session activity
+  recorded here, during which real progress happened (via Derrick directly
+  and/or another session) without this doc being updated — same "work not
+  recorded gets lost" risk flagged twice before, so logging the current
+  state now rather than assuming. Confirmed via `git log` (merged PRs
+  #27-#35) and live checks against Vercel/Stripe:
+  - **FirstReply (pilot #1) billing is fully live and confirmed working.**
+    Vercel production env vars show real live-mode Stripe keys
+    (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` for the live webhook
+    endpoint, `STRIPE_PRICE_ID` = `price_1UPRboDO6yW1Q71Vj6AkVBR9`, the
+    same Price this session created on 2026-10-11), `BILLING_REQUIRED=true`
+    in production, and a verified Resend sending domain
+    (`hello@kingofai.store`). The Price's own Vercel comment confirms
+    **"Live $1 test passed and was refunded"** — someone actually proved
+    the live charge path works, not just configured it. Payhip was never
+    finished (no `PAYHIP_PRODUCT_LINK`/`PAYHIP_WEBHOOK_TOKEN` in Vercel) —
+    Stripe-only in production, which is a legitimate choice, not an
+    oversight, given it's already proven working.
+  - Also shipped since: FirstReply branding (logo/favicon, skyline
+    background UI), a demo-video lead magnet at `/demo`, SEO/AEO/GEO
+    readiness work, a `website_leads` Prisma schema fix (was silently
+    getting dropped by `db push`), a Stripe webhook crash fix (subscription
+    period end was read from the wrong place), and a link from the
+    revenue-os home page to the FirstReply preview. The standalone
+    Airtable-migration doc (`docs/airtable-migration-strategy.md`,
+    separate from this file) was also marked done.
+  - **Noted, not yet resolved:** this session's Stripe connector now also
+    sees a *second*, different Stripe account also named "First Reply LLC"
+    (`acct_1TejgEDxhKjPbYnY`, test mode) with an unrelated product catalog
+    (social-media-management-style Starter/Growth/Premium plans, nothing
+    to do with the real estate lead tool). Production is correctly wired
+    to the *other* account (`acct_1TemuBDO6yW1Q71V`), so this isn't an
+    active risk, but the duplicate naming is worth Derrick's awareness in
+    case it causes confusion later. Also saw a third account, "Revenue OS"
+    (`acct_1UPWrm4wp8rcMA5F`, test mode) — billing groundwork for
+    Revenue OS itself, consistent with it being a sellable product too.
+  - Pilot #2 (Primerica Assist Pro / Mark Goodlow) status unknown —
+    nothing recorded here since the 2026-10-11 pause pending Derrick's
+    conversations with Mark's team. Need to ask directly rather than
+    assume either way.
