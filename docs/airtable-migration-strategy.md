@@ -152,13 +152,29 @@ against the real database:
   Resend key in Vault, fill in `email_from`/the two recipient settings, flip
   `email_provider` to `'resend'`) whenever you're ready for real sends.
 
-  Verified end-to-end against the live database: flipping a deal's stage
-  fired `trg_deal_stage_alert` and logged a `deal_stage_alert` row; calling
-  `revenue_os_crm.run_pipeline_digest()` logged a `pipeline_digest` row with
-  the correct open-deal count; both correctly refused to "send" (status
-  `failed`, with an explanatory error) when no recipient was configured,
-  and correctly logged `sent_test` once a recipient was set. Settings were
-  left back at their safe, unconfigured defaults afterward.
+  Verified end-to-end against the live database in test mode first:
+  flipping a deal's stage fired `trg_deal_stage_alert` and logged a
+  `deal_stage_alert` row; calling `revenue_os_crm.run_pipeline_digest()`
+  logged a `pipeline_digest` row with the correct open-deal count; both
+  correctly refused to "send" (status `failed`, with an explanatory error)
+  when no recipient was configured, and correctly logged `sent_test` once
+  a recipient was set.
+
+  **Status: live.** Both automations now send real email:
+  - A Resend API key (sending-access, scoped to one domain) is generated
+    and stored in Supabase Vault as `resend_api_key` — never written to
+    this repo.
+  - Sending domain: `kingofai.store` (its DKIM + both SPF records are
+    verified; one optional return-path CNAME isn't, which doesn't block
+    sending). `revenueos.ai` was the other candidate but has no DNS
+    records configured yet, so it isn't usable until that's fixed.
+  - `email_from = alerts@kingofai.store`; both
+    `deal_stage_alert_recipient` and `pipeline_digest_recipient` are set
+    to Derrick's address; `email_provider = 'resend'`.
+  - Re-verified with real sends after flipping the switch: both the
+    stage-change alert and the pipeline digest fired, logged
+    `status = 'queued'` in `email_events`, and Resend's own send log
+    confirms all 3 test emails as `status: delivered`.
 
 ## Step 5: Loaded into the real database — done
 
