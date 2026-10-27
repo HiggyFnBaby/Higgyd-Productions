@@ -164,10 +164,12 @@ against the real database:
   - A Resend API key (sending-access, scoped to one domain) is generated
     and stored in Supabase Vault as `resend_api_key` — never written to
     this repo.
-  - Sending domain: `kingofai.store` (its DKIM + both SPF records are
-    verified; one optional return-path CNAME isn't, which doesn't block
-    sending). `revenueos.ai` was the other candidate but has no DNS
-    records configured yet, so it isn't usable until that's fixed.
+  - Sending domain: `kingofai.store` — fully `verified` in Resend (DKIM,
+    both SPF records, and the return-path CNAME all green; the CNAME
+    briefly lagged behind the other 3 after being added at Namecheap but
+    cleared once DNS finished propagating). `revenueos.ai` was the other
+    candidate but has no DNS records configured yet, so it isn't usable
+    until that's fixed.
   - `email_from = alerts@kingofai.store`; both
     `deal_stage_alert_recipient` and `pipeline_digest_recipient` are set
     to Derrick's address; `email_provider = 'resend'`.
