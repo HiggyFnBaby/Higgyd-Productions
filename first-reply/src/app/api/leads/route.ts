@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   const agent = await prisma.agent.findUnique({
     where: { id: agentId },
-    include: { subscription: { select: { status: true } } },
+    include: { subscription: { select: { status: true, currentPeriodEnd: true } } },
   });
   if (!agent) {
     return NextResponse.json({ error: "Unknown agent link" }, { status: 404 });
@@ -51,7 +51,10 @@ export async function POST(request: Request) {
     data: { agentId, name: name.trim(), email: email.trim().toLowerCase(), phone: phone?.trim() || null, message: message?.trim() || null },
   });
 
-  const autoReplyAllowed = canSendLeadEmails(agent.subscription?.status);
+  const autoReplyAllowed = canSendLeadEmails(
+    agent.subscription?.status,
+    agent.subscription?.currentPeriodEnd,
+  );
   let autoReplySent = false;
 
   if (autoReplyAllowed) {

@@ -59,6 +59,34 @@ export function billingRequired(): boolean {
   return process.env.BILLING_REQUIRED === "true";
 }
 
-export function canSendLeadEmails(status: SubscriptionStatus | undefined | null): boolean {
-  return !billingRequired() || isSubscribed(status);
+// A canceled subscription still covers the period the agent already paid for.
+// Stripe reports `canceled` the moment a subscription is cancelled — including
+// an immediate mid-period cancel — while currentPeriodEnd still holds the date
+// their money covers. The billing page already tells them "Access ends: <that
+// date>", so the service has to actually last that long or we have taken their
+// money for a month and switched them off early.
+//
+// PAST_DUE deliberately gets no grace: that status means the payment for the
+// current period FAILED, so there is no paid-through date to honour.
+export function isWithinPaidPeriod(
+  status: SubscriptionStatus | undefined | null,
+  currentPeriodEnd: Date | undefined | null,
+): boolean {
+  if (status !== "CANCELED" || !currentPeriodEnd) return false;
+  return currentPeriodEnd.getTime() > Date.now();
+}
+
+// The one definition of "are this agent's automated emails live right now?".
+// Both call sites that send (the lead capture route and the follow-up cron) and
+// the dashboard notice that explains the pause go through this, so what the UI
+// claims and what the system does cannot drift apart.
+//
+// currentPeriodEnd is a required argument on purpose: when it was optional a
+// caller could silently omit it and cut an agent off mid-period again.
+export function canSendLeadEmails(
+  status: SubscriptionStatus | undefined | null,
+  currentPeriodEnd: Date | undefined | null,
+): boolean {
+  if (!billingRequired()) return true;
+  return isSubscribed(status) || isWithinPaidPeriod(status, currentPeriodEnd);
 }
