@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAgentId } from "@/lib/currentAgent";
-import { billingRequired, isSubscribed } from "@/lib/billing";
+import { canSendLeadEmails } from "@/lib/billing";
 import { LeadList } from "@/components/LeadList";
 import { CaptureLinkBox } from "@/components/CaptureLinkBox";
 
@@ -14,9 +14,18 @@ export default async function DashboardPage() {
 
   const [leads, subscription] = await Promise.all([
     prisma.lead.findMany({ where: { agentId }, orderBy: { createdAt: "desc" } }),
-    prisma.subscription.findUnique({ where: { agentId }, select: { status: true } }),
+    prisma.subscription.findUnique({
+      where: { agentId },
+      select: { status: true, currentPeriodEnd: true },
+    }),
   ]);
-  const showPaywallNotice = billingRequired() && !isSubscribed(subscription?.status);
+  // Shown exactly when sending is actually off — same function the send paths
+  // use, so an agent inside the period they paid for is never told their
+  // auto-replies are paused while they are in fact still going out.
+  const showPaywallNotice = !canSendLeadEmails(
+    subscription?.status,
+    subscription?.currentPeriodEnd,
+  );
 
   return (
     <div className="flex flex-col gap-6">

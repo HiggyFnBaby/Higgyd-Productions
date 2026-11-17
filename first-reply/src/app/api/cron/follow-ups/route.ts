@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const now = Date.now();
   const leads = await prisma.lead.findMany({
     where: { status: "NEW" },
-    include: { agent: { include: { subscription: { select: { status: true } } } } },
+    include: { agent: { include: { subscription: { select: { status: true, currentPeriodEnd: true } } } } },
   });
 
   let touch2Count = 0;
@@ -32,7 +32,12 @@ export async function GET(request: Request) {
     const needsTouch2 = !lead.touch2SentAt && age >= THREE_DAYS_MS;
     if (!needsTouch3 && !needsTouch2) continue;
 
-    if (!canSendLeadEmails(lead.agent.subscription?.status)) {
+    if (
+      !canSendLeadEmails(
+        lead.agent.subscription?.status,
+        lead.agent.subscription?.currentPeriodEnd,
+      )
+    ) {
       skippedUnpaid++;
       continue;
     }
